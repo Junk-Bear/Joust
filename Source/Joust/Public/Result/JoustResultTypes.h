@@ -41,7 +41,7 @@ struct JOUST_API FJoustExchangeResult
 
 	/** 수비자의 낙마 여부 */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Result")
-	bool bDefenderUnhorsed = fasle;
+	bool bDefenderUnhorsed = false;
 };
 
 /**
