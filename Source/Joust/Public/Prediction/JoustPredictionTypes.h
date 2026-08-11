@@ -19,10 +19,6 @@ struct JOUST_API FJoustPredictionSettings
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
 	float InitialRadius = 0.0f;
 
-	/** 마지막 예측원 반지름 */
-	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
-	float FinalRadius = 0.0f;
-
 	/** 전체 Prediction Stage 수*/
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
 	int32 StageCount = 0;
@@ -49,10 +45,6 @@ struct JOUST_API FJoustPredictionSettings
 	/** 전체 Prediction 진행 시간 */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
 	float TotalDuration = 0.0f;
-
-	/** 실제 AttackPoint가 공개되는 시점 */
-	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
-	float AttackPointRevealTime = 0.0f;
 
 	/** Trick Attack에서 사용할 Fake 원 수 */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
@@ -117,29 +109,41 @@ struct JOUST_API FJoustPredictionSequence
 	/** Sequence 생성에 사용한 Seed */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
 	int32 PredictionSeed = 0;
+};
 
-	/** 전체 Stage 수 */
+/** 
+* 현재 화면에 실제 표시할 Prediction Circle 하나
+* 
+*/
+
+USTRUCT(BlueprintType)
+struct JOUST_API FJoustPredictionDisplayCircle
+{
+	GENERATED_BODY()
+
+	/** 현재 화면에 표시할 원의 중심 */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
-	int32 StageCount = 0;
+	FVector2D Center = FVector2D::ZeroVector;
+
+	/** 현재 화면에 표시할 원의 반지름 */
+	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
+	float Radius = 0.0f;
+
+
 };
 
 /**
-* 현재 화면에 공개할 수 있는 Prediction 상태
-* 
-* 현재 플레이어에게 보여줄 수 있는 상태
+* 클라이언트 / HUD에 공개가능한
+* 현재 Prediction Runtime 상태
 */
 USTRUCT(BlueprintType)
 struct JOUST_API FJoustPredictionState
 {
 	GENERATED_BODY()
 
-	/** 현재 화면에 표시되는 원의 중심*/
+	/** 현재 화면에 표시할 예측원 원의 목록*/
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
-	FVector2D DisplayCenter = FVector2D::ZeroVector;
-
-	/** 현재 화면에 표시되는 원의 반지름 */
-	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
-	float DisplayRadius = 0.0f;
+	TArray<FJoustPredictionDisplayCircle> DisplayCircles;
 
 	/** 현재 Stage */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")

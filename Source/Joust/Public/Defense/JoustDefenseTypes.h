@@ -21,7 +21,7 @@ struct JOUST_API FJoustDefenseData
 	* 1 = Player B
 	*/
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Defense")
-	int32 DefenderId = 0;
+	int32 DefenderId = INDEX_NONE;
 
 	/** 최종 방패 위치 */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Defense")

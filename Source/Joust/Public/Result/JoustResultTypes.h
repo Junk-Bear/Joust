@@ -27,7 +27,7 @@ struct JOUST_API FJoustExchangeResult
 	* 1 = 득점, 0 = 무득점
 	*/
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Result")
-	int32 ScoreDelta;
+	int32 ScoreDelta = 0;
 
 	/** 
 	* 모든 값을 계산한 최종 결정타 확률
@@ -41,7 +41,7 @@ struct JOUST_API FJoustExchangeResult
 
 	/** 수비자의 낙마 여부 */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Result")
-	bool bDefenderUnhorsed;
+	bool bDefenderUnhorsed = fasle;
 };
 
 /**
