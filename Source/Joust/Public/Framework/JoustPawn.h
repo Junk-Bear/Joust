@@ -6,7 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "JoustPawn.generated.h"
 
-class USceneComponent
+class USceneComponent;
 
 UCLASS()
 class JOUST_API AJoustPawn : public APawn
