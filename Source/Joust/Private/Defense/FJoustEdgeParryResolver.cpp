@@ -6,5 +6,5 @@
 
 bool FJoustEdgeParryResolver::Resolve(EJoustGuardZone GuardZone, EJoustParryOutcome ParryOutcome)
 {
-	return (GuardZone == EJoustGuardZone::Bad && ParryOutcome == EJoustParryOutcome::Success)
+	return (GuardZone == EJoustGuardZone::Bad && ParryOutcome == EJoustParryOutcome::Success);
 }
