@@ -10,7 +10,7 @@ enum class EJoustGuardZone : uint8;
 /**
  * 패링에 대한 성공여부 등을 계산하고 판별하는 클래스
  */
-class JOUST_API FJoustParryResolver
+class JOUST_API FJoustParryResolver final
 {
 public:
 	/** 패링 입력 여부와 타이밍을 판단 */
