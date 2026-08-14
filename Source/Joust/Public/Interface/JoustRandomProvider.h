@@ -14,7 +14,7 @@ class UJoustRandomProvider : public UInterface
 };
 
 /**
- * 랜덤 값이 필요하다고 계약만 정의
+ * 랜덤 값이 필요하다고 계약만 선언
  */
 class JOUST_API IJoustRandomProvider
 {

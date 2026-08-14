@@ -16,7 +16,7 @@ class JOUST_API FJoustMatchResultResolver final
 {
 public:
 	/**
-	* MatchResult를 만들어서 반환함.
+	* MatchResult를 만들고 반환함.
 	*/
 	static FJoustMatchResult Resolve(
 		int32 CurrentRoundNumber, int32 BaseRoundCount, 

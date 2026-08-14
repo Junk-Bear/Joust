@@ -10,7 +10,7 @@ FJoustMatchResult FJoustMatchResultResolver::Resolve(
 	bool bPlayerAUnhorsed, bool bPlayerBUnhorsed)
 {
 	//MatchResult의 디폴트값으로 선언&정의
-	FJoustMatchResult Result;
+	FJoustMatchResult Result{};
 
 	Result.MatchOutcome = EJoustMatchOutcome::Undecided;
 	Result.PlayerAScore = PlayerAFinalScore;
