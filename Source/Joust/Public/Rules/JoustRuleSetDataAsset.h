@@ -33,6 +33,21 @@ public:
 	bool bContinueOvertimeUntilWinner = true;
 
 	// ====================
+	// Phase
+	// ====================
+	/** Phase 1 기본 제한 시간 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Phase", meta = (ClampMin = "0.0"))
+	float StrategyPhaseDuration = 20.0f;
+
+	/** Phase 2 기본 제한 시간*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Phase", meta = (ClampMin = "0.0"))
+	float AttackPhaseDuration = 15.0f;
+
+	/** 한쪽 플레이어의 선택 완료시 제한시간 단축 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Phase", meta = (ClampMin = "0.0"))
+	float OnePlayerCompletedRemainingTime = 7.0f;
+
+	// ====================
 	// Strategy
 	// ====================
 
