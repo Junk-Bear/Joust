@@ -110,7 +110,7 @@ private: // ########### private 변수 블록 ############
 	/** 최종 경기 결과 Event */
 	FOnMatchResult MatchResultEvent;
 
-public: // ########## GET SET 블록 ###########
+public: // ########## GET SET 블록 ##########
 
 	FORCEINLINE int32 GetCurrentRoundNumber() const { return CurrentRoundNumber; }
 

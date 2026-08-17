@@ -49,6 +49,12 @@ public: // ########## public 함수 블록 ##########
 	void MarkPlayerAComplete();
 	void MarkPlayerBComplete();
 
+	/** 제한시간이 없는 페이즈를 세팅 */
+	bool SetNoneTimedPhase(EJoustPhase InPhase);
+
+	/** 남은 시간 계산 및 반환 */
+	float GetRemainingTime() const;
+
 protected: // ########## protected 함수 블록 ##########
 
 	/** PhaseCoordinator가 사라질 때 타이머콜백이 남아있지 않도록 명시적 처리 */
@@ -94,7 +100,7 @@ private : // ########## private 변수 블록 ##########
 	/** 실제 페이즈종료 이벤트 인스턴스 */
 	FOnPhaseEnded PhaseEndedEvent;
 
-public: // ########## GET SET 블록 ###########
+public: // ########## GET SET 블록 ##########
 	FORCEINLINE EJoustPhase GetCurrentPhase() const { return CurrentPhase; }
 
 	FORCEINLINE bool IsPhaseActive() const { return bPhaseActive; }
@@ -110,11 +116,6 @@ public: // ########## GET SET 블록 ###########
 	FORCEINLINE float GetPhaseEndTime() const { return PhaseEndTime; }
 
 	FORCEINLINE float GetPhaseDuration() const { return PhaseDuration; }
-
-	bool SetNoneTimedPhase(EJoustPhase InPhase);
-
-	/** 남은 시간 계산 */
-	float GetRemainingTime() const;
 
 	FORCEINLINE FOnPhaseEnded& OnPhaseEnded() { return PhaseEndedEvent; }
 };

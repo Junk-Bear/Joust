@@ -7,6 +7,7 @@
 #include "Rules/JoustRuleSetDataAsset.h"
 #include "Result/FJoustRoundResolver.h"
 #include "Match/JoustMatchCoordinator.h"
+#include "Strategy/JoustStrategyService.h"
 
 void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinator, UJoustRuleSetDataAsset* InRuleSet, IJoustRandomProvider& InRandomProvider)
 {
@@ -32,6 +33,15 @@ void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinat
 	if (PhaseCoordinator != nullptr)
 	{
 		PhaseCoordinator->OnPhaseEnded().AddUObject(this, &UJoustRoundCoordinator::HandlePhaseEnded);
+	}
+
+	if (StrategyService == nullptr)
+	{
+		StrategyService = NewObject<UJoustStrategyService>(this);
+	}
+	else
+	{
+		StrategyService->Initialize(RuleSet, InRandomProvider);
 	}
 }
 
@@ -224,6 +234,11 @@ bool UJoustRoundCoordinator::CompleteRoundResultPhase()
 	if (MatchCoordinator != nullptr)
 	{
 		MatchCoordinatorPtr->HandleRoundResolvedCompleted();
+	}
+
+	if (StrategyService != nullptr)
+	{
+		StrategyService->EndRound();
 	}
 
 	return true;

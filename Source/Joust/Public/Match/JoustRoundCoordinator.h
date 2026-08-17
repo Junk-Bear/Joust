@@ -13,6 +13,7 @@ class UJoustPhaseCoordinator;
 class UJoustRuleSetDataAsset;
 class IJoustRandomProvider;
 class UJoustMatchCoordinator;
+class UJoustStrategyService;
 
 struct FJoustRoundResult;
 
@@ -122,7 +123,7 @@ private: // ########## private 함수 블록 ##########
 
 private: // ########## private 변수 블록 ##########
 
-	/** 라운드코오디네이터 존재 -> 페이즈코오디네이터 반드시 존재 */
+	/** RoundCoordinator 존재 -> PhaseCoordinator 반드시 존재 */
 	UPROPERTY(Transient)
 	TObjectPtr<UJoustPhaseCoordinator> PhaseCoordinator = nullptr;
 
@@ -133,7 +134,12 @@ private: // ########## private 변수 블록 ##########
 	/** 랜덤 생성용 */
 	IJoustRandomProvider* RandomProvider = nullptr;
 
+	/** 상위 MatchCoordinator */
 	TWeakObjectPtr<UJoustMatchCoordinator> MatchCoordinator;
+
+	/** Phase1 시스템 */
+	UPROPERTY(Transient)
+	TObjectPtr<UJoustStrategyService> StrategyService = nullptr;
 
 	/** 현재 라운드 번호 */
 	int32 RoundNumber = 0;
@@ -162,7 +168,7 @@ private: // ########## private 변수 블록 ##########
 	/** 실제 RoundResult 이벤트 인스턴스 */
 	FOnRoundResult RoundResultEvent;
 
-public: // ########## GET SET 블록 ###########
+public: // ########## GET SET 블록 ##########
 
 	FORCEINLINE int32 GetRoundNumber() const { return RoundNumber; }
 
