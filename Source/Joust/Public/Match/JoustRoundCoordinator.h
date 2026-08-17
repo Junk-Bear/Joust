@@ -14,6 +14,7 @@ class UJoustRuleSetDataAsset;
 class IJoustRandomProvider;
 class UJoustMatchCoordinator;
 class UJoustStrategyService;
+class UJoustAttackService;
 
 struct FJoustRoundResult;
 
@@ -140,6 +141,10 @@ private: // ########## private 변수 블록 ##########
 	/** Phase1 시스템 */
 	UPROPERTY(Transient)
 	TObjectPtr<UJoustStrategyService> StrategyService = nullptr;
+
+	/** Phase2 시스템 */
+	UPROPERTY(Transient)
+	TObjectPtr<UJoustAttackService> AttackService = nullptr;
 
 	/** 현재 라운드 번호 */
 	int32 RoundNumber = 0;

@@ -13,7 +13,7 @@ class IJoustRandomProvider;
 class UJoustStrategyCardDataAsset;
 
 /**
- * 
+ *  Stragtegy Phase의 진행을 맡은 클래스
  */
 UCLASS()
 class JOUST_API UJoustStrategyService : public UObject

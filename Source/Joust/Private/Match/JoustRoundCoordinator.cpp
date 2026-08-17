@@ -8,6 +8,7 @@
 #include "Result/FJoustRoundResolver.h"
 #include "Match/JoustMatchCoordinator.h"
 #include "Strategy/JoustStrategyService.h"
+#include "Attack/JoustAttackService.h"
 
 void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinator, UJoustRuleSetDataAsset* InRuleSet, IJoustRandomProvider& InRandomProvider)
 {
@@ -42,6 +43,15 @@ void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinat
 	else
 	{
 		StrategyService->Initialize(RuleSet, InRandomProvider);
+	}
+
+	if (AttackService == nullptr)
+	{
+		AttackService = NewObject<UJoustAttackService>(this);
+	}
+	else
+	{
+		AttackService->Initialize(RuleSet, InRandomProvider);
 	}
 }
 
@@ -102,12 +112,22 @@ bool UJoustRoundCoordinator::BeginAttackPhase()
 	if (RuleSet == nullptr)
 		return false;
 
-	return BeginTimedPhase(
+	if (AttackService == nullptr)
+		return false;
+
+	const bool bStarted = BeginTimedPhase(
 		EJoustPhase::Attack,
 		RuleSet->AttackPhaseDuration,
 		RuleSet->OnePlayerCompletedRemainingTime,
 		ERoundFlowState::ReadyForAttack, ERoundFlowState::Attack
 	);
+
+	if (bStarted)
+	{
+		AttackService->SetSubmissionOpen(true);
+	}
+
+	return bStarted;
 }
 
 bool UJoustRoundCoordinator::BeginDefensePhase(float InPlayerADefenseDuration, float InPlayerBDefenseDuration)
@@ -241,6 +261,11 @@ bool UJoustRoundCoordinator::CompleteRoundResultPhase()
 		StrategyService->EndRound();
 	}
 
+	if (AttackService != nullptr)
+	{
+		AttackService->EndRound();
+	}
+
 	return true;
 }
 
@@ -300,6 +325,10 @@ void UJoustRoundCoordinator::HandlePhaseEnded(EJoustPhase EndedPhase)
 	case EJoustPhase::Attack:
 		if (FlowState == ERoundFlowState::Attack)
 		{
+			if (AttackService != nullptr)
+			{
+				AttackService->SetSubmissionOpen(false);
+			}
 			FlowState = ERoundFlowState::ReadyForDefense;
 		}
 		break;
