@@ -193,8 +193,8 @@ void UJoustStrategyService::ResetRoundState()
 {
 	PublicCards.Reset();
 
-	PlayerASelectedCard == nullptr;
-	PlayerBSelectedCard == nullptr;
+	PlayerASelectedCard = nullptr;
+	PlayerBSelectedCard = nullptr;
 
 	PlayerABaseStats = FJoustPlayerStats{};
 	PlayerBBaseStats = FJoustPlayerStats{};

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-struct UJoustStrategyCardDataAsset;
+class UJoustStrategyCardDataAsset;
 
 /**
  * 카드 한 장을 밴하는 클래스
