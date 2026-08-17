@@ -9,7 +9,7 @@ class UJoustStrategyCardDataAsset;
 /**
  * 카드 한 장을 밴하는 클래스
  */
-class JOUST_API FJoustCardBanService
+class JOUST_API FJoustCardBanService final
 {
 public: // ########## public 함수 블록 ##########
 
