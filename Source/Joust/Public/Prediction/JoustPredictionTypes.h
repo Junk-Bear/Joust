@@ -98,7 +98,7 @@ struct JOUST_API FJoustPredictionCircle
  * 서버가 보관하는 미래 전체 경로
  */
 USTRUCT(BlueprintType)
-struct JOUST_API FJoustPredictionSequence
+struct JOUST_API FJoustPredictionSeries
 {
 	GENERATED_BODY()
 

@@ -169,8 +169,12 @@ public:
 	// ====================
 
 	/** 기본 최초 예측원 반지름 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Critical|Prediction", meta = (ClampMin = "0.0"))
-	float DefaultInitialPredictionRadius = 1.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Prediction", meta = (ClampMin = "0.0"))
+	float DefaultInitialPredictionRadius = 0.8f;
+
+	/** FakeAttackPoint가 생성될 때 AttackPoint로부터 떨어져야 하는 최소 거리 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Prediction", meta = (ClampMin = "0.0"))
+	float MinFakeAttackPointDistance = 0.4f;
 
 	/**
 	* 유효한 Prediction Circle 생성에 실패 했을 때 Generator가 재시도할 최대 횟 수
@@ -178,6 +182,6 @@ public:
 	* 나중에 로그 확인용
 	* 최대 횟수 이상 걸리면 버그 터질까봐 안전장치용
 	*/
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Critical|Prediction", meta = (ClampMin = "1"))
-	int32 MaxPredictionGenerationAttempts = 32;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Prediction", meta = (ClampMin = "1"))
+	int32 MaxPredictionAttempts = 128;
 };
