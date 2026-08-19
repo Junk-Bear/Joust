@@ -15,9 +15,10 @@ class IJoustRandomProvider;
 class UJoustMatchCoordinator;
 class UJoustStrategyService;
 class UJoustAttackService;
+class UJoustPredictionService;
 
 struct FJoustRoundResult;
-
+struct FJoustAttackData;
 
 
 /**
@@ -102,6 +103,14 @@ public: // ########## public 함수 블록 ##########
 	*/
 	bool CompleteRoundResultPhase();
 
+	/** 양쪽 확정 공격에 대한 Prediction데이터를 생성 */
+	bool PreparePredictions(
+		const FJoustAttackData& PlayerAAttackData, const FJoustAttackData& PlayerBAttackData,
+		float PlayerAReading, float PlayerBReading);
+
+	/** 양쪽 Prediction이 모두 준비되었는지 확인 */
+	bool ArePredictionsPrepared() const;
+
 protected: // ########## protected 함수 블록 ##########
 
 	/** PhaseCoordinator의 이벤트 바인딩을 명시적으로 정리 */
@@ -172,6 +181,13 @@ private: // ########## private 변수 블록 ##########
 
 	/** 실제 RoundResult 이벤트 인스턴스 */
 	FOnRoundResult RoundResultEvent;
+
+	/** 양플레이어 공->수에 대한 Prediction */
+	UPROPERTY(Transient)
+	TObjectPtr<UJoustPredictionService> AToBPredictionService;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UJoustPredictionService> BToAPredictionService;
 
 public: // ########## GET SET 블록 ##########
 

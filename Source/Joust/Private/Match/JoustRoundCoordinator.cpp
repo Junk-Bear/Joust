@@ -9,6 +9,8 @@
 #include "Match/JoustMatchCoordinator.h"
 #include "Strategy/JoustStrategyService.h"
 #include "Attack/JoustAttackService.h"
+#include "Attack/JoustAttackTypes.h"
+#include "Prediction/JoustPredictionService.h"
 
 void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinator, UJoustRuleSetDataAsset* InRuleSet, IJoustRandomProvider& InRandomProvider)
 {
@@ -52,6 +54,20 @@ void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinat
 	else
 	{
 		AttackService->Initialize(RuleSet, InRandomProvider);
+	}
+
+	AToBPredictionService = NewObject<UJoustPredictionService>(this);
+
+	BToAPredictionService = NewObject<UJoustPredictionService>(this);
+
+	if (AToBPredictionService)
+	{
+		AToBPredictionService->Initialize(RuleSet, RandomProvider);
+	}
+
+	if (BToAPredictionService)
+	{
+		BToAPredictionService->Initialize(RuleSet, RandomProvider);
 	}
 }
 
@@ -266,7 +282,61 @@ bool UJoustRoundCoordinator::CompleteRoundResultPhase()
 		AttackService->EndRound();
 	}
 
+	if (AToBPredictionService != nullptr)
+	{
+		AToBPredictionService->EndRound();
+	}
+
+	if (BToAPredictionService != nullptr)
+	{
+		BToAPredictionService->EndRound();
+	}
+
 	return true;
+}
+
+bool UJoustRoundCoordinator::PreparePredictions(const FJoustAttackData& PlayerAAttackData, const FJoustAttackData& PlayerBAttackData, float PlayerAReading, float PlayerBReading)
+{
+	if (!bRoundActive || FlowState != ERoundFlowState::ReadyForDefense || !AToBPredictionService || !BToAPredictionService)
+		return false;
+
+
+	AToBPredictionService->EndRound();
+	BToAPredictionService->EndRound();
+
+	if (!AToBPredictionService->PreparePrediction(
+		PlayerAAttackData.AttackType,
+		PlayerAAttackData.AttackPoint,
+		PlayerAAttackData.PredictionSeed,
+		PlayerAAttackData.Deception,
+		PlayerAAttackData.Quickness,
+		PlayerBReading))
+	{
+		AToBPredictionService->EndRound();
+		BToAPredictionService->EndRound();
+		return false;
+	}
+
+	if (!BToAPredictionService->PreparePrediction(
+		PlayerBAttackData.AttackType,
+		PlayerBAttackData.AttackPoint,
+		PlayerBAttackData.PredictionSeed,
+		PlayerBAttackData.Deception,
+		PlayerBAttackData.Quickness,
+		PlayerAReading))
+	{
+		AToBPredictionService->EndRound();
+		BToAPredictionService->EndRound();
+		return false;
+	}
+
+	return true;
+}
+
+bool UJoustRoundCoordinator::ArePredictionsPrepared() const
+{
+	return AToBPredictionService && BToAPredictionService &&
+		AToBPredictionService->IsPrepared() && BToAPredictionService->IsPrepared();;
 }
 
 void UJoustRoundCoordinator::BeginDestroy()
