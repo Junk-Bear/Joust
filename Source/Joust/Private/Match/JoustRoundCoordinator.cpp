@@ -11,6 +11,7 @@
 #include "Attack/JoustAttackService.h"
 #include "Attack/JoustAttackTypes.h"
 #include "Prediction/JoustPredictionService.h"
+#include "Prediction/JoustPredictionSeriesController.h"
 
 void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinator, UJoustRuleSetDataAsset* InRuleSet, IJoustRandomProvider& InRandomProvider)
 {
@@ -68,6 +69,24 @@ void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinat
 	if (BToAPredictionService)
 	{
 		BToAPredictionService->Initialize(RuleSet, RandomProvider);
+	}
+
+	AToBPredictionController = NewObject<UJoustPredictionSeriesController>(this);
+
+	BToAPredictionController = NewObject<UJoustPredictionSeriesController>(this);
+
+	if (AToBPredictionController != nullptr)
+	{
+		AToBPredictionController->Initialize();
+
+		AToBPredictionController->OnPlaybackCompleted().AddUObject(this, &UJoustRoundCoordinator::HandlePredictionPlaybackCompleted);
+	}
+
+	if (BToAPredictionController != nullptr)
+	{
+		BToAPredictionController->Initialize();
+
+		BToAPredictionController->OnPlaybackCompleted().AddUObject(this, &UJoustRoundCoordinator::HandlePredictionPlaybackCompleted);
 	}
 }
 
@@ -339,6 +358,45 @@ bool UJoustRoundCoordinator::ArePredictionsPrepared() const
 		AToBPredictionService->IsPrepared() && BToAPredictionService->IsPrepared();;
 }
 
+bool UJoustRoundCoordinator::StartPredictionPlayback()
+{
+	if (!bRoundActive || 
+		FlowState != ERoundFlowState::ReadyForDefense ||
+		AToBPredictionService == nullptr || BToAPredictionService == nullptr ||
+		AToBPredictionController == nullptr || BToAPredictionController == nullptr ||
+		!ArePredictionsPrepared())
+		return false;
+
+	AToBPredictionController->StopPlayback();
+	BToAPredictionController->StopPlayback();
+
+	bPredictionPlaybackCompleted = false;
+
+	if (!AToBPredictionController->StartPlayback(
+		AToBPredictionService->GetCurrentSettings(),
+		AToBPredictionService->GetRealSeries(),
+		AToBPredictionService->GetFakeSeries()))
+	{
+		AToBPredictionController->StopPlayback();
+		BToAPredictionController->StopPlayback();
+
+		return false;
+	}
+
+	if (!BToAPredictionController->StartPlayback(
+		BToAPredictionService->GetCurrentSettings(),
+		BToAPredictionService->GetRealSeries(),
+		BToAPredictionService->GetFakeSeries()))
+	{
+		AToBPredictionController->StopPlayback();
+		BToAPredictionController->StopPlayback();
+
+		return false;
+	}
+
+	return true;
+}
+
 void UJoustRoundCoordinator::BeginDestroy()
 {
 	if (PhaseCoordinator != nullptr)
@@ -427,4 +485,18 @@ void UJoustRoundCoordinator::ResetRoundData()
 	BToAImpactTime = 0.0f;
 
 	CurrentRoundResult = FJoustRoundResult{};
+}
+
+void UJoustRoundCoordinator::HandlePredictionPlaybackCompleted()
+{
+	if (bPredictionPlaybackCompleted ||
+		AToBPredictionController == nullptr ||
+		BToAPredictionController == nullptr ||
+		!AToBPredictionController->IsCompleted() ||
+		!BToAPredictionController->IsCompleted())
+		return;
+
+	bPredictionPlaybackCompleted = true;
+
+	PredictionPlaybackCompletedEvent.Broadcast();
 }

@@ -16,6 +16,7 @@ class UJoustMatchCoordinator;
 class UJoustStrategyService;
 class UJoustAttackService;
 class UJoustPredictionService;
+class UJoustPredictionSeriesController;
 
 struct FJoustRoundResult;
 struct FJoustAttackData;
@@ -33,6 +34,10 @@ public: // ########## 델리게이트 블록 ##########
 
 	/** 라운드 결과가 확정되었음을 알리는 이벤트 */
 	DECLARE_EVENT_OneParam(UJoustRoundCoordinator, FOnRoundResult, const FJoustRoundResult&);
+
+	/** 양쪽 방향 모두 Prediction 재생이 완료 되었음을 알리는 이벤트 */
+	DECLARE_EVENT(UJoustRoundCoordinator, FOnPredictionPlaybackCompleted);
+
 
 private: // ########## 내부용 ENUM ##########
 
@@ -105,11 +110,15 @@ public: // ########## public 함수 블록 ##########
 
 	/** 양쪽 확정 공격에 대한 Prediction데이터를 생성 */
 	bool PreparePredictions(
-		const FJoustAttackData& PlayerAAttackData, const FJoustAttackData& PlayerBAttackData,
+		const FJoustAttackData& InPlayerAAttackData, const FJoustAttackData& InPlayerBAttackData,
 		float PlayerAReading, float PlayerBReading);
 
 	/** 양쪽 Prediction이 모두 준비되었는지 확인 */
 	bool ArePredictionsPrepared() const;
+
+	/** 준비된 양방향 Prediction Series 재생을 시작 */
+	bool StartPredictionPlayback();
+
 
 protected: // ########## protected 함수 블록 ##########
 
@@ -130,6 +139,9 @@ private: // ########## private 함수 블록 ##########
 
 	/** 새 라운드를 하기전 이전 라운드 초기화 */
 	void ResetRoundData();
+
+	/** 양 방향 재생 완료를 확인 */
+	void HandlePredictionPlaybackCompleted();
 
 private: // ########## private 변수 블록 ##########
 
@@ -179,15 +191,27 @@ private: // ########## private 변수 블록 ##########
 	/** 이번 라운드의 최종 판정 결과 */
 	FJoustRoundResult CurrentRoundResult{};
 
-	/** 실제 RoundResult 이벤트 인스턴스 */
+	/** FOnRoundResult 이벤트용 */
 	FOnRoundResult RoundResultEvent;
 
 	/** 양플레이어 공->수에 대한 Prediction */
 	UPROPERTY(Transient)
 	TObjectPtr<UJoustPredictionService> AToBPredictionService;
-
 	UPROPERTY(Transient)
 	TObjectPtr<UJoustPredictionService> BToAPredictionService;
+
+	/** 방향별 Prediction 재생 */
+	UPROPERTY(Transient)
+	TObjectPtr<UJoustPredictionSeriesController> AToBPredictionController;
+	UPROPERTY(Transient)
+	TObjectPtr<UJoustPredictionSeriesController> BToAPredictionController;
+
+	/** 양 방향 Prediction 재생이 완료됐는지 확인 */
+	bool bPredictionPlaybackCompleted = false;
+
+	/** FOnPredictionPlaybackCompleted 이벤트용 */
+	FOnPredictionPlaybackCompleted PredictionPlaybackCompletedEvent;
+
 
 public: // ########## GET SET 블록 ##########
 
@@ -210,4 +234,10 @@ public: // ########## GET SET 블록 ##########
 	FORCEINLINE const FJoustRoundResult& GetCurrentRoundResult() const { return CurrentRoundResult; }
 
 	FORCEINLINE void SetMatchCoordinator(UJoustMatchCoordinator* InMatchCoordinator) { MatchCoordinator = InMatchCoordinator; }
+
+	FORCEINLINE FOnRoundResult& OnRoundResult() { return RoundResultEvent; }
+
+	FORCEINLINE FOnPredictionPlaybackCompleted& OnPredictionPlaybackCompleted() { return PredictionPlaybackCompletedEvent; }
+
+	FORCEINLINE bool IsPredictionPlaybackCompleted() const { return bPredictionPlaybackCompleted; }
 };
