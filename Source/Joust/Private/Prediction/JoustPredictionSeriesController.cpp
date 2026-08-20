@@ -142,7 +142,7 @@ bool UJoustPredictionSeriesController::ValidatePlaybackData(
 
 	for (float Item : InSettings.StageDurations)
 	{
-		if (!FMath::IsFinite(Item))
+		if (!FMath::IsFinite(Item) || Item <= 0.0f)
 			return false;
 	}
 
@@ -202,7 +202,11 @@ bool UJoustPredictionSeriesController::UpdateDisplayCircles()
 		return false;
 
 	if (FakeSeries.IsEmpty() || (CurrentStageIdx + 1 >= Settings.FakeRemoveStage))
-		return false;
+	{
+		FakeDisplayCircles.Reset();
+
+		return true;
+	}
 
 	FakeDisplayCircles.SetNum(FakeSeries.Num());
 

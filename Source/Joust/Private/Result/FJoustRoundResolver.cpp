@@ -54,8 +54,8 @@ namespace Joust::Private
 
 FJoustRoundResult FJoustRoundResolver::Reslove(
 	int32 RoundNumber, 
-	const FJoustAttackData& PlayerAAttackData, const FJoustDefenseData& PlayerADefenseData, float PlayerAToBImpactTime, 
-	const FJoustAttackData& PlayerBAttackData, const FJoustDefenseData& PlayerBDefenseData, float PlayerBToAImpactTime, 
+	const FJoustAttackData& PlayerAAttackData, const FJoustDefenseData& PlayerBDefenseData, float PlayerAToBImpactTime, 
+	const FJoustAttackData& PlayerBAttackData, const FJoustDefenseData& PlayerADefenseData, float PlayerBToAImpactTime, 
 	const UJoustRuleSetDataAsset& RuleSet, IJoustRandomProvider& RandomProvider)
 {
 	FJoustRoundResult Result{};

@@ -40,7 +40,7 @@ bool FJoustCardBanService::SubmitBan(bool bBanningPlayerA, FName CardID, const T
 	}
 	else
 	{
-		if (!bPlayerAHasBanRight || bPlayerBBanSumitted)
+		if (!bPlayerBHasBanRight || bPlayerBBanSumitted)
 			return false;
 	}
 
@@ -65,7 +65,7 @@ bool FJoustCardBanService::HasPendingBan(bool bPlayerA) const
 {
 	if (bPlayerA)
 	{
-		return bPlayerABanSumitted && !bPlayerABanSumitted;
+		return bPlayerAHasBanRight && !bPlayerABanSumitted;
 	}
 	else
 	{

@@ -103,16 +103,14 @@ public:
 	// ====================
 
 	/** Trick공격에서 생성할 가짜 원 수 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Attack|Fake", 
-		meta = (ClampMin = "0", EditCondition = "AttackType == EJoustAttackType::Trick", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Attack|Fake", meta = (ClampMin = "0"))
 	int32 FakeCircleCount = 0;
 
 	/** 
 	*가짜 원이 제거되는 Stage
 	* INDEX_NONE : 제거 별도 지정X
 	*/
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Attack|Fake",
-		meta = (EditCondition = "AttackType == EJoustAttackType::Trick", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Attack|Fake", meta = (EditCondition = "FakeCircleCount > 0", EditConditionHides))
 	int32 FakeRemoveStage = INDEX_NONE;
 
 };

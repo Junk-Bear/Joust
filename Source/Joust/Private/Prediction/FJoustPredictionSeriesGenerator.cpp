@@ -46,7 +46,7 @@ bool FJoustPredictionSeriesGenerator::Generate(
 	CandidateSeries.Circles.Add(
 		CurrentCircle);
 
-	for (int i = 0; i < Settings.StageCount; ++i)
+	for (int i = 1; i < Settings.StageCount; ++i)
 	{
 		FJoustPredictionCircle NextCircle;
 

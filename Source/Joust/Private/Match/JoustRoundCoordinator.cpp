@@ -43,19 +43,15 @@ void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinat
 	{
 		StrategyService = NewObject<UJoustStrategyService>(this);
 	}
-	else
-	{
-		StrategyService->Initialize(RuleSet, InRandomProvider);
-	}
+
+	StrategyService->Initialize(RuleSet, InRandomProvider);
 
 	if (AttackService == nullptr)
 	{
 		AttackService = NewObject<UJoustAttackService>(this);
 	}
-	else
-	{
-		AttackService->Initialize(RuleSet, InRandomProvider);
-	}
+
+	AttackService->Initialize(RuleSet, InRandomProvider);
 
 	AToBPredictionService = NewObject<UJoustPredictionService>(this);
 
@@ -218,7 +214,7 @@ bool UJoustRoundCoordinator::ResolveRound(
 	if (PhaseCoordinator == nullptr)
 		return false;
 
-	if (RuleSet != nullptr)
+	if (RuleSet == nullptr)
 		return false;
 	
 	if (RandomProvider == nullptr)
@@ -286,7 +282,8 @@ bool UJoustRoundCoordinator::CompleteRoundResultPhase()
 	bRoundActive = false;
 
 	UJoustMatchCoordinator* MatchCoordinatorPtr = MatchCoordinator.Get();
-	if (MatchCoordinator != nullptr)
+
+	if (MatchCoordinatorPtr != nullptr)
 	{
 		MatchCoordinatorPtr->HandleRoundResolvedCompleted();
 	}
@@ -300,6 +297,18 @@ bool UJoustRoundCoordinator::CompleteRoundResultPhase()
 	{
 		AttackService->EndRound();
 	}
+
+	if (AToBPredictionController != nullptr)
+	{
+		AToBPredictionController->StopPlayback();
+	}
+
+	if (BToAPredictionController != nullptr)
+	{
+		BToAPredictionController->StopPlayback();
+	}
+
+	bPredictionPlaybackCompleted = false;
 
 	if (AToBPredictionService != nullptr)
 	{
@@ -402,6 +411,20 @@ void UJoustRoundCoordinator::BeginDestroy()
 	if (PhaseCoordinator != nullptr)
 	{
 		PhaseCoordinator->OnPhaseEnded().RemoveAll(this);
+	}
+
+	if (AToBPredictionController != nullptr)
+	{
+		AToBPredictionController->OnPlaybackCompleted().RemoveAll(this);
+
+		AToBPredictionController->StopPlayback();
+	}
+
+	if (BToAPredictionController != nullptr)
+	{
+		BToAPredictionController->OnPlaybackCompleted().RemoveAll(this);
+
+		BToAPredictionController->StopPlayback();
 	}
 
 	RandomProvider = nullptr;

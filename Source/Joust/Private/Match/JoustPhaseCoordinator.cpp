@@ -47,6 +47,11 @@ float UJoustPhaseCoordinator::GetRemainingTime() const
 	return FMath::Max(0.0f, PhaseEndTime - WorldPtr->GetTimeSeconds());
 }
 
+void UJoustPhaseCoordinator::Initialize(UWorld* InWorld)
+{
+	World = InWorld;
+}
+
 bool UJoustPhaseCoordinator::StartTimedPhase(EJoustPhase InPhase, float InDurationSeconds, float InShortenRemainingTime)
 {
 	UWorld* WorldPtr = World.Get();

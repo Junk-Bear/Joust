@@ -56,7 +56,7 @@ bool FJoustAttackUsageTracker::CanUse(EJoustAttackType AttackType) const
         return false;
 
     if (*Remaining == INDEX_NONE)
-        return false;
+        return true;
 
     return *Remaining > 0;
 }

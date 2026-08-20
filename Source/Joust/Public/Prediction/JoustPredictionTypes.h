@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "JoustPredictiontypes.generated.h"
+#include "JoustPredictionTypes.generated.h"
 
 /**
 * 이번 공격에서 실제로 사용할 Prediction 설정

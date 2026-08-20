@@ -116,6 +116,7 @@ bool UJoustStrategyService::FinalizeStrategy()
 		return false;
 
 	PlayerACurrentStats = FJoustCardEffectResolver::Resolve(PlayerABaseStats, PlayerASelectedCard->Modifier);
+	PlayerBCurrentStats = FJoustCardEffectResolver::Resolve(PlayerBBaseStats, PlayerBSelectedCard->Modifier);
 
 	bStrategyFinalized = true;
 	

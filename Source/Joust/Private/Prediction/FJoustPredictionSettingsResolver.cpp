@@ -93,7 +93,7 @@ bool FJoustPredictionSettingsResolver::ValidateStageRadiusRatios(const TArray<fl
 	if (!FMath::IsNearlyEqual(StageRadiusRatios[0], 1.0f))
 		return false;
 
-	if (!FMath::IsNearlyZero(StageRadiusRatios.Last()))
+	if (StageRadiusRatios.Last() != 0.0f)
 		return false;
 
 	for (int32 i = 0; i < StageRadiusRatios.Num(); ++i)
