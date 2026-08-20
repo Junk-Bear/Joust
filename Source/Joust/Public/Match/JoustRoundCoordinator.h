@@ -17,6 +17,9 @@ class UJoustStrategyService;
 class UJoustAttackService;
 class UJoustPredictionService;
 class UJoustPredictionSeriesController;
+class IJoustStrategyInput;
+class IJoustAttackInput;
+class IJoustDefenseInput;
 
 struct FJoustRoundResult;
 struct FJoustAttackData;
@@ -118,6 +121,18 @@ public: // ########## public 함수 블록 ##########
 
 	/** 준비된 양방향 Prediction Series 재생을 시작 */
 	bool StartPredictionPlayback();
+
+	/** Strategy Phase에서 해당 플레이어의 카드 봉인 입력을 제출 */
+	bool SubmitStrategyBan(bool bPlayerA, const IJoustStrategyInput& StrategyInput);
+
+	/** Strategy Phase에서 해당 플레이어의 전략 카드 선택을 제출 */
+	bool SubmitStrategySelection(bool bPlayerA, const IJoustStrategyInput& StrategyInput);
+
+	/** Attack Phase에서 해당 플레이어의 확정 공격 입력을 제출 */
+	bool SubmitAttack(bool bPlayerA, const IJoustAttackInput& AttackInput);
+
+	/** Defense Phase에서 해당 플레이어의 방어 입력을 제출 */
+	bool SubmitDefense(bool bPlayerA, const IJoustDefenseInput& DefenseInput);
 
 
 protected: // ########## protected 함수 블록 ##########

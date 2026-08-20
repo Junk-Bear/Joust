@@ -12,6 +12,9 @@
 #include "Attack/JoustAttackTypes.h"
 #include "Prediction/JoustPredictionService.h"
 #include "Prediction/JoustPredictionSeriesController.h"
+#include "Interface/JoustStrategyInput.h"
+#include "Interface/JoustAttackInput.h"
+#include "Interface/JoustDefenseInput.h"
 
 void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinator, UJoustRuleSetDataAsset* InRuleSet, IJoustRandomProvider& InRandomProvider)
 {
@@ -406,6 +409,84 @@ bool UJoustRoundCoordinator::StartPredictionPlayback()
 	return true;
 }
 
+bool UJoustRoundCoordinator::SubmitStrategyBan(bool bPlayerA, const IJoustStrategyInput& StrategyInput)
+{
+	if (!bRoundActive || FlowState != ERoundFlowState::Strategy || StrategyService == nullptr)
+		return false;
+
+	FName CardID;
+
+	if (!StrategyInput.TryGetBannedStrategyCardID(CardID))
+		return false;
+
+	return StrategyService->SubmitBan(bPlayerA, CardID);
+}
+
+bool UJoustRoundCoordinator::SubmitStrategySelection(bool bPlayerA, const IJoustStrategyInput& StrategyInput)
+{
+	if (!bRoundActive || FlowState != ERoundFlowState::Strategy || StrategyService == nullptr)
+		return false;
+
+	FName CardID;
+
+	if (!StrategyInput.TryGetSelectedStrategyCardID(CardID))
+		return false;
+
+	if (!StrategyService->SubmitStrategySelection(bPlayerA, CardID))
+		return false;
+
+	if (bPlayerA)
+	{
+		MarkPlayerAComplete();
+	}
+	else
+	{
+		MarkPlayerBComplete();
+	}
+
+	return true;
+}
+
+bool UJoustRoundCoordinator::SubmitAttack(bool bPlayerA, const IJoustAttackInput& AttackInput)
+{
+	if (!bRoundActive || FlowState != ERoundFlowState::Attack || AttackService == nullptr || !AttackInput.IsAttackConfirmed())
+		return false;
+
+	FJoustAttackData AttackData{};
+	AttackData.AttackPoint = AttackInput.GetAttackPoint();
+	AttackData.AttackType = AttackInput.GetAttackType();
+
+	if (!AttackService->SubmitAttack(bPlayerA, AttackData))
+		return false;
+
+	if (bPlayerA)
+	{
+		MarkPlayerAComplete();
+	}
+	else
+	{
+		MarkPlayerBComplete();
+	}
+
+	return true;
+}
+
+bool UJoustRoundCoordinator::SubmitDefense(bool bPlayerA, const IJoustDefenseInput& DefenseInput)
+{
+	if (!bRoundActive || FlowState != ERoundFlowState::Defense || bPredictionPlaybackCompleted)
+		return false;
+	
+	FJoustDefenseData& DefenseData = bPlayerA ? PlayerADefenseData : PlayerBDefenseData;
+
+	DefenseData.ShieldPoint = DefenseInput.GetShieldPoint();
+
+	DefenseData.bParryAttempted = DefenseInput.IsParryAttempted();
+
+	DefenseData.ParryInputTime = DefenseData.bParryAttempted ? DefenseInput.GetParryInputTime() : 0.0f;
+
+	return true;
+}
+
 void UJoustRoundCoordinator::BeginDestroy()
 {
 	if (PhaseCoordinator != nullptr)
@@ -522,4 +603,10 @@ void UJoustRoundCoordinator::HandlePredictionPlaybackCompleted()
 	bPredictionPlaybackCompleted = true;
 
 	PredictionPlaybackCompletedEvent.Broadcast();
+
+	if (!bRoundActive || FlowState != ERoundFlowState::Defense || PhaseCoordinator == nullptr)
+		return;
+
+	MarkPlayerAComplete();
+	MarkPlayerBComplete();
 }

@@ -53,14 +53,6 @@ struct JOUST_API FJoustPredictionSettings
 	/** Fake Prediction이 제거되는 Stage */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
 	int32 FakeRemoveStage = INDEX_NONE;
-
-	/** 최종 적용된 공격자 기만 보정 */
-	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
-	float AppliedDeceptionModifier = 0.0f;
-
-	/** 최종 적용된 수비자 판독 보정 */
-	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
-	float AppliedReadingModifier = 0.0f;
 };
 
 /**
@@ -81,14 +73,6 @@ struct JOUST_API FJoustPredictionCircle
 	/** 원 반지름 */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
 	float Radius = 0.0f;
-
-	/** Prediction Stage 번호 */
-	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
-	int32 StageIndex = 0;
-
-	/** 화면/디버깅용 Circle ID */
-	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
-	int32 CircleId = INDEX_NONE;
 };
 
 /**
@@ -161,10 +145,6 @@ struct JOUST_API FJoustPredictionState
 	/** Prediction UI 표시 여부 */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
 	bool bIsPredictionVisible = false;
-
-	/** 현재 Fake Prediction 표시 여부 */
-	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")
-	bool bIsFakeCircleVisible = false;
 
 	/** 실제 AttackPoint가 공개되었는지 여부 */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Prediction")

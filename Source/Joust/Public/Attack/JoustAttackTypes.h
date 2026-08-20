@@ -16,13 +16,6 @@ struct JOUST_API FJoustAttackData
 {
 	GENERATED_BODY()
 
-	/**
-	 * 공격 플레이어 식별값.
-	 * 0 = Player A
-	 * 1 = Player B
-	 */
-	UPROPERTY(BlueprintReadWrite, Category = "Joust|Attack")
-	int32 AttackerPlayerIndex = INDEX_NONE;
 
 	/** 실제 공격점 */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Attack")
@@ -47,8 +40,4 @@ struct JOUST_API FJoustAttackData
 	/** Prediction 재현용 Seed */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Attack")
 	int32 PredictionSeed = 0;
-
-	/** 서버 기준 공격 확정 시각 */
-	UPROPERTY(BlueprintReadWrite, Category = "Joust|Attack")
-	double ConfirmedTime = 0.0;
 };

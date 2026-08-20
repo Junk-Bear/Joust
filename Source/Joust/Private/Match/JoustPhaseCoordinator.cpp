@@ -185,6 +185,7 @@ void UJoustPhaseCoordinator::HandleOnePlayerComplete()
 	if (AreBothPlayerComplete())
 	{
 		FinishTimedPhase();
+
 		return;
 	}
 
