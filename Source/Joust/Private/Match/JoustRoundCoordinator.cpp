@@ -295,7 +295,7 @@ bool UJoustRoundCoordinator::CompleteRoundResultPhase()
 	return true;
 }
 
-bool UJoustRoundCoordinator::PreparePredictions(const FJoustAttackData& PlayerAAttackData, const FJoustAttackData& PlayerBAttackData, float PlayerAReading, float PlayerBReading)
+bool UJoustRoundCoordinator::PreparePredictions(const FJoustAttackData& InPlayerAAttackData, const FJoustAttackData& InPlayerBAttackData, float PlayerAReading, float PlayerBReading)
 {
 	if (!bRoundActive || FlowState != ERoundFlowState::ReadyForDefense || !AToBPredictionService || !BToAPredictionService)
 		return false;
@@ -305,11 +305,11 @@ bool UJoustRoundCoordinator::PreparePredictions(const FJoustAttackData& PlayerAA
 	BToAPredictionService->EndRound();
 
 	if (!AToBPredictionService->PreparePrediction(
-		PlayerAAttackData.AttackType,
-		PlayerAAttackData.AttackPoint,
-		PlayerAAttackData.PredictionSeed,
-		PlayerAAttackData.Deception,
-		PlayerAAttackData.Quickness,
+		InPlayerAAttackData.AttackType,
+		InPlayerAAttackData.AttackPoint,
+		InPlayerAAttackData.PredictionSeed,
+		InPlayerAAttackData.Deception,
+		InPlayerAAttackData.Quickness,
 		PlayerBReading))
 	{
 		AToBPredictionService->EndRound();
@@ -318,11 +318,11 @@ bool UJoustRoundCoordinator::PreparePredictions(const FJoustAttackData& PlayerAA
 	}
 
 	if (!BToAPredictionService->PreparePrediction(
-		PlayerBAttackData.AttackType,
-		PlayerBAttackData.AttackPoint,
-		PlayerBAttackData.PredictionSeed,
-		PlayerBAttackData.Deception,
-		PlayerBAttackData.Quickness,
+		InPlayerBAttackData.AttackType,
+		InPlayerBAttackData.AttackPoint,
+		InPlayerBAttackData.PredictionSeed,
+		InPlayerBAttackData.Deception,
+		InPlayerBAttackData.Quickness,
 		PlayerAReading))
 	{
 		AToBPredictionService->EndRound();
