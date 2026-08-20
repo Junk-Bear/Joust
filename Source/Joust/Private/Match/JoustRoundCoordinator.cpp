@@ -606,7 +606,4 @@ void UJoustRoundCoordinator::HandlePredictionPlaybackCompleted()
 
 	if (!bRoundActive || FlowState != ERoundFlowState::Defense || PhaseCoordinator == nullptr)
 		return;
-
-	MarkPlayerAComplete();
-	MarkPlayerBComplete();
 }
