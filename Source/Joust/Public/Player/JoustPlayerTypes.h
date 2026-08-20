@@ -119,3 +119,19 @@ struct JOUST_API FJoustDefenseHistory
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Joust|Player")
 	bool bUnhorsed = false;
 };
+
+/**
+ * AttackType별 남은 경기 사용 횟수의 복제용 상태
+ */
+USTRUCT(BlueprintType)
+struct JOUST_API FJoustAttackUsageState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "Joust|Player")
+	EJoustAttackType AttackType = EJoustAttackType::Normal;
+
+	/** INDEX_NONE = 무제한 */
+	UPROPERTY(BlueprintReadOnly, Category = "Joust|Player")
+	int32 RemainingUses = 0;
+};

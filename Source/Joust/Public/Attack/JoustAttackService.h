@@ -49,6 +49,9 @@ public: // ########## public 함수 블록 ##########
 	/** 공격 타입의 남은 횟수 반환(무제한 : INDEX_NONE) */
 	int32 GetRemainingUses(bool bPlayerA, EJoustAttackType AttackType) const;
 
+	/** 해당 플레이어의 전체 AttackType 남은 사용 횟수 Snapshot 반환 */
+	bool GetUsageSnapshot(bool bPlayerA, TMap<EJoustAttackType, int32>& OutRemainingUses) const;
+
 private: // ########## private 함수 블록 ##########
 	/** RuleSet과 RandomProvider, Usage 빼고 남은 상태만 초기화 */
 	void ResetRoundState();

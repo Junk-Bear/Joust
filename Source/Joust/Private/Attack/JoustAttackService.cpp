@@ -144,6 +144,26 @@ int32 UJoustAttackService::GetRemainingUses(bool bPlayerA, EJoustAttackType Atta
     return UsageTracker.GetRemainingUses(AttackType);
 }
 
+bool UJoustAttackService::GetUsageSnapshot(bool bPlayerA, TMap<EJoustAttackType, int32>& OutRemainingUses) const
+{
+    OutRemainingUses.Reset();
+
+    if (RuleSet == nullptr || !bMatchUsageInitialized)
+        return false;
+
+    OutRemainingUses.Reserve(
+        RuleSet->AttackTypeSettings.Num());
+
+    const FJoustAttackUsageTracker& UsageTracker = bPlayerA ? PlayerAUsageTracker : PlayerBUsageTracker;
+
+    for (const TPair<EJoustAttackType,TObjectPtr<UJoustAttackTypeDataAsset>>& PairItem : RuleSet->AttackTypeSettings)
+    {
+        OutRemainingUses.Add(PairItem.Key, UsageTracker.GetRemainingUses(PairItem.Key));
+    }
+
+    return true;
+}
+
 void UJoustAttackService::ResetRoundState()
 {
     PlayerACurrentStats = FJoustPlayerStats{};

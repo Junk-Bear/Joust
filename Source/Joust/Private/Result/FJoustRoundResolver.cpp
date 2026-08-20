@@ -52,7 +52,7 @@ namespace Joust::Private
 
 }
 
-FJoustRoundResult FJoustRoundResolver::Reslove(
+FJoustRoundResult FJoustRoundResolver::Resolve(
 	int32 RoundNumber, 
 	const FJoustAttackData& PlayerAAttackData, const FJoustDefenseData& PlayerBDefenseData, float PlayerAToBImpactTime, 
 	const FJoustAttackData& PlayerBAttackData, const FJoustDefenseData& PlayerADefenseData, float PlayerBToAImpactTime, 

@@ -6,14 +6,16 @@
 #include "Rules/JoustRuleSetDataAsset.h"
 #include "Result/FJoustMatchResultResolver.h"
 #include "Match/JoustPhaseCoordinator.h"
+#include "Framework/JoustGameState.h"
 
 void UJoustMatchCoordinator::Initialize(UJoustRoundCoordinator* InRoundCoordinator, UJoustPhaseCoordinator* InPhaseCoordinator, const UJoustRuleSetDataAsset* InRuleSet)
 {
-	//재 초기화될 경우 : 부모연결부터 해제
 	if (RoundCoordinator != nullptr)
 	{
 		RoundCoordinator->SetMatchCoordinator(nullptr);
 	}
+
+	GameState.Reset();
 
 	RoundCoordinator = InRoundCoordinator;
 	PhaseCoordinator = InPhaseCoordinator;
@@ -25,7 +27,6 @@ void UJoustMatchCoordinator::Initialize(UJoustRoundCoordinator* InRoundCoordinat
 
 	FlowState = EMatchFlowState::Idle;
 
-	//RoundCoordinator에서 부모 MatchCoordinator 꽂기(Back Ref)
 	if (RoundCoordinator != nullptr)
 	{
 		RoundCoordinator->SetMatchCoordinator(this);
@@ -34,30 +35,28 @@ void UJoustMatchCoordinator::Initialize(UJoustRoundCoordinator* InRoundCoordinat
 
 bool UJoustMatchCoordinator::StartMatch()
 {
-	if (RoundCoordinator == nullptr)
+	if (RoundCoordinator == nullptr || !PhaseCoordinator.IsValid() || BaseRoundCount <= 0)
 		return false;
 
-	if (!PhaseCoordinator.IsValid())
-		return false;
-
-	if (BaseRoundCount <= 0)
-		return false;
-
-	//첫경기 or 이전 경기가 완전히 종료된 뒤만 시작할 수 있게
 	if (FlowState != EMatchFlowState::Idle && FlowState != EMatchFlowState::Finished)
 		return false;
 
-	//RoundCoordinator가 아직 라운드 진행중이면 초기화 못하게
 	if (RoundCoordinator->IsRoundActive())
 		return false;
 
 	ResetMatchData();
 
+	AJoustGameState* GameStatePtr = GameState.Get();
+
+	if (GameStatePtr != nullptr)
+	{
+		GameStatePtr->ResetMatchState();
+	}
+
 	CurrentRoundNumber = 1;
 
 	FlowState = EMatchFlowState::ReadyForRound;
 
-	//실패하면 부분롤백
 	if (!StartCurrentRound())
 	{
 		CurrentRoundNumber = 0;
@@ -86,27 +85,32 @@ void UJoustMatchCoordinator::BeginDestroy()
 	{
 		RoundCoordinator->SetMatchCoordinator(nullptr);
 	}
+	
+	GameState.Reset();
 
 	PhaseCoordinator.Reset();
+
 
 	Super::BeginDestroy();
 }
 
 bool UJoustMatchCoordinator::StartCurrentRound()
 {
-	if (FlowState != EMatchFlowState::ReadyForRound)
-		return false;
-
-	if (RoundCoordinator == nullptr)
-		return false;
-
-	if (CurrentRoundNumber <= 0)
-		return false;
-
-	if (!RoundCoordinator->StartRound(CurrentRoundNumber))
+	if (
+		FlowState != EMatchFlowState::ReadyForRound ||
+		RoundCoordinator == nullptr || 
+		CurrentRoundNumber <= 0 || 
+		!RoundCoordinator->StartRound(CurrentRoundNumber))
 		return false;
 
 	FlowState = EMatchFlowState::RoundInProgress;
+
+	AJoustGameState* GameStatePtr = GameState.Get();
+
+	if (GameStatePtr != nullptr)
+	{
+		GameStatePtr->SetCurrentRoundNumber(CurrentRoundNumber);
+	}
 
 	return true;
 }
@@ -121,6 +125,13 @@ void UJoustMatchCoordinator::HandleRoundResolved(FJoustRoundResult& RoundResult)
 
 	PlayerAScore += RoundResult.AtoBExchangeResult.ScoreDelta;
 	PlayerBScore += RoundResult.BtoAExchangeResult.ScoreDelta;
+
+	AJoustGameState* GameStatePtr = GameState.Get();
+
+	if (GameStatePtr != nullptr)
+	{
+		GameStatePtr->SetScores(PlayerAScore, PlayerBScore);
+	}
 
 	const bool bPlayerAUnhorsed = RoundResult.BtoAExchangeResult.bDefenderUnhorsed;
 	const bool bPlayerBUnhorsed = RoundResult.AtoBExchangeResult.bDefenderUnhorsed;
@@ -140,7 +151,6 @@ void UJoustMatchCoordinator::HandleRoundResolvedCompleted()
 	if (FlowState != EMatchFlowState::WaitingForRoundResultCompletion)
 		return;
 
-	//연장전 돌입
 	if (CurrentMatchResult.MatchOutcome == EJoustMatchOutcome::Undecided)
 	{
 		CurrentRoundNumber++;
@@ -152,7 +162,6 @@ void UJoustMatchCoordinator::HandleRoundResolvedCompleted()
 		return;
 	}
 
-	//승패 나옴
 	UJoustPhaseCoordinator* PhaseCoordinatorPtr = PhaseCoordinator.Get();
 
 	if (PhaseCoordinatorPtr == nullptr)
@@ -160,6 +169,15 @@ void UJoustMatchCoordinator::HandleRoundResolvedCompleted()
 
 	if (!PhaseCoordinatorPtr->SetNoneTimedPhase(EJoustPhase::MatchResult))
 		return;
+
+	AJoustGameState* GameStatePtr = GameState.Get();
+
+	if (GameStatePtr != nullptr)
+	{
+		GameStatePtr->SetPhaseState(EJoustPhase::MatchResult, PhaseCoordinatorPtr->GetPhaseEndTime());
+
+		GameStatePtr->SetMatchResult(CurrentMatchResult);
+	}
 
 	FlowState = EMatchFlowState::MatchResult;
 

@@ -20,6 +20,8 @@ class UJoustPredictionSeriesController;
 class IJoustStrategyInput;
 class IJoustAttackInput;
 class IJoustDefenseInput;
+class AJoustPlayerState;
+class AJoustGameState;
 
 struct FJoustRoundResult;
 struct FJoustAttackData;
@@ -88,7 +90,7 @@ public: // ########## public 함수 블록 ##########
 	* 
 	* 두 방어의 제한 시간 중 더 긴 값을 제한 시간으로 사용
 	*/
-	bool BeginDefensePhase(float InPlayerADefenseDuration, float InPlayerBDefenseDuration);
+	bool BeginDefensePhase();
 
 	/** 현재 TimedPhase에서 A / B 가 입력 완료 */
 	void MarkPlayerAComplete();
@@ -99,10 +101,7 @@ public: // ########## public 함수 블록 ##########
 	* 
 	* 판정은 FJoustRoundResolver가 함
 	*/
-	bool ResolveRound(
-		const FJoustAttackData& InAAttackData, const FJoustDefenseData& InBDefenseData, float InAToBImpactTime,
-		const FJoustAttackData& InBAttackData, const FJoustDefenseData& InADefenseData, float InBToAImpactTime
-	);
+	bool ResolveRound();
 
 	/** 
 	* RoundResult의 표시 / 연출이 끝났음을 알림
@@ -111,16 +110,8 @@ public: // ########## public 함수 블록 ##########
 	*/
 	bool CompleteRoundResultPhase();
 
-	/** 양쪽 확정 공격에 대한 Prediction데이터를 생성 */
-	bool PreparePredictions(
-		const FJoustAttackData& InPlayerAAttackData, const FJoustAttackData& InPlayerBAttackData,
-		float PlayerAReading, float PlayerBReading);
-
 	/** 양쪽 Prediction이 모두 준비되었는지 확인 */
 	bool ArePredictionsPrepared() const;
-
-	/** 준비된 양방향 Prediction Series 재생을 시작 */
-	bool StartPredictionPlayback();
 
 	/** Strategy Phase에서 해당 플레이어의 카드 봉인 입력을 제출 */
 	bool SubmitStrategyBan(bool bPlayerA, const IJoustStrategyInput& StrategyInput);
@@ -133,6 +124,9 @@ public: // ########## public 함수 블록 ##########
 
 	/** Defense Phase에서 해당 플레이어의 방어 입력을 제출 */
 	bool SubmitDefense(bool bPlayerA, const IJoustDefenseInput& DefenseInput);
+
+	/** 실제 Player A / B PlayerState를 연결하고 현재 Attack Usage를 동기화 */
+	bool SetPlayerStates(AJoustPlayerState* InPlayerAState, AJoustPlayerState* InPlayerBState);
 
 
 protected: // ########## protected 함수 블록 ##########
@@ -158,6 +152,24 @@ private: // ########## private 함수 블록 ##########
 	/** 양 방향 재생 완료를 확인 */
 	void HandlePredictionPlaybackCompleted();
 
+	/** PlayerState의 Attack Usage Snapshot을 동기화 */
+	bool SyncAttackUsageStates();
+
+	/** 양쪽 확정 공격 / 방어 데이터에 대한 Prediction을 준비 */
+	bool PreparePredictions();	
+	
+	/** 준비된 양방향 Prediction Series 재생을 시작 */
+	bool StartPredictionPlayback();
+
+	/** 확정된 RoundResult를 양쪽 PlayerState에 반영 */
+	void ApplyRoundResultToPlayerStates(AJoustPlayerState& PlayerAStateRef, AJoustPlayerState& PlayerBStateRef, int32 PlayerAScore, int32 PlayerBScore);
+	
+	/** 현재 Phase 상태를 GameState에 동기화 */
+	void SyncPhasePublicState();
+
+	/** 이번 라운드 공개 Strategy 카드 목록을 GameState에 동기화 */
+	void SyncStrategyPublicCards();
+
 private: // ########## private 변수 블록 ##########
 
 	/** RoundCoordinator 존재 -> PhaseCoordinator 반드시 존재 */
@@ -173,6 +185,10 @@ private: // ########## private 변수 블록 ##########
 
 	/** 상위 MatchCoordinator */
 	TWeakObjectPtr<UJoustMatchCoordinator> MatchCoordinator;
+
+	/** 실제 경기 Player A / B 상태 */
+	TWeakObjectPtr<AJoustPlayerState> PlayerAState;
+	TWeakObjectPtr<AJoustPlayerState> PlayerBState;
 
 	/** Phase1 시스템 */
 	UPROPERTY(Transient)
@@ -227,6 +243,9 @@ private: // ########## private 변수 블록 ##########
 	/** FOnPredictionPlaybackCompleted 이벤트용 */
 	FOnPredictionPlaybackCompleted PredictionPlaybackCompletedEvent;
 
+	/** 공개 경기 상태 */
+	TWeakObjectPtr<AJoustGameState> GameState;
+
 
 public: // ########## GET SET 블록 ##########
 
@@ -255,4 +274,6 @@ public: // ########## GET SET 블록 ##########
 	FORCEINLINE FOnPredictionPlaybackCompleted& OnPredictionPlaybackCompleted() { return PredictionPlaybackCompletedEvent; }
 
 	FORCEINLINE bool IsPredictionPlaybackCompleted() const { return bPredictionPlaybackCompleted; }
+
+	FORCEINLINE void SetGameState(AJoustGameState* InGameState) { GameState = InGameState; }
 };

@@ -10,6 +10,7 @@
 class UJoustRoundCoordinator;
 class UJoustPhaseCoordinator;
 class UJoustRuleSetDataAsset;
+class AJoustGameState;
 
 /**
  * 게임 매치 전체 진행을 담당하는 클래스
@@ -110,6 +111,9 @@ private: // ########### private 변수 블록 ############
 	/** 최종 경기 결과 Event */
 	FOnMatchResult MatchResultEvent;
 
+	/** 공개 경기 상태 */
+	TWeakObjectPtr<AJoustGameState> GameState;
+
 public: // ########## GET SET 블록 ##########
 
 	FORCEINLINE int32 GetCurrentRoundNumber() const { return CurrentRoundNumber; }
@@ -125,4 +129,6 @@ public: // ########## GET SET 블록 ##########
 	FORCEINLINE const FJoustMatchResult& GetCurrentMatchResult() const { return CurrentMatchResult; }
 
 	FORCEINLINE FOnMatchResult& OnMatchResult() { return MatchResultEvent; }
+
+	FORCEINLINE void SetGameState(AJoustGameState* InGameState) { GameState = InGameState; }
 };

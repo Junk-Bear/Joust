@@ -15,6 +15,9 @@
 #include "Interface/JoustStrategyInput.h"
 #include "Interface/JoustAttackInput.h"
 #include "Interface/JoustDefenseInput.h"
+#include "Framework/JoustPlayerState.h"
+#include "Framework/JoustGameState.h"
+#include "Strategy/JoustStrategyCardDataAsset.h"
 
 void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinator, UJoustRuleSetDataAsset* InRuleSet, IJoustRandomProvider& InRandomProvider)
 {
@@ -28,6 +31,11 @@ void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinat
 	RuleSet = InRuleSet;
 	RandomProvider = &InRandomProvider;
 
+	PlayerAState.Reset();
+	PlayerBState.Reset();
+
+	GameState.Reset();
+
 	RoundNumber = 0;
 
 	bRoundActive = false;
@@ -36,7 +44,6 @@ void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinat
 
 	ResetRoundData();
 
-	//새 PhaseCoordinator의 페이즈종료 이벤트 구독
 	if (PhaseCoordinator != nullptr)
 	{
 		PhaseCoordinator->OnPhaseEnded().AddUObject(this, &UJoustRoundCoordinator::HandlePhaseEnded);
@@ -91,29 +98,44 @@ void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinat
 
 bool UJoustRoundCoordinator::StartRound(int32 InRoundNumber)
 {
-	if (PhaseCoordinator == nullptr)
+	if (PhaseCoordinator == nullptr || RuleSet == nullptr || RandomProvider == nullptr || StrategyService == nullptr)
 		return false;
 
-	if (RuleSet == nullptr)
-		return false;
-
-	if (RandomProvider == nullptr)
-		return false;
-
-	//라운드 진행 중이면 새라운드 시작 X
 	if (bRoundActive)
 		return false;
 
-	//첫라운드 or 이전라운드가 완전히 Finished된 경우에만 가능하도록 방지
 	if (FlowState != ERoundFlowState::Idle && FlowState != ERoundFlowState::Finished)
 		return false;
 
-	//PhaseCoordinator에서 이전 TimePhase가 아직 실행중이면 안됨
 	if (PhaseCoordinator->IsPhaseActive())
 		return false;
 
 	if (InRoundNumber <= 0)
 		return false;
+
+	AJoustPlayerState* PlayerAStatePtr = PlayerAState.Get();
+	AJoustPlayerState* PlayerBStatePtr = PlayerBState.Get();
+
+	if (PlayerAStatePtr == nullptr || PlayerBStatePtr == nullptr)
+		return false;
+
+	PlayerAStatePtr->ResetRoundState();
+	PlayerBStatePtr->ResetRoundState();
+
+	if (!StrategyService->PrepareRound(
+		PlayerAStatePtr->GetBaseStats(), PlayerBStatePtr->GetBaseStats(),
+		PlayerAStatePtr->HasBanRight(), PlayerBStatePtr->HasBanRight()))
+		return false;
+	
+	PlayerAStatePtr->SetHasBanRight(false);
+	PlayerBStatePtr->SetHasBanRight(false);
+
+	if (AJoustGameState* GameStatePtr = GameState.Get())
+	{
+		GameStatePtr->ClearStrategyState();
+	}
+
+	SyncStrategyPublicCards();
 
 	RoundNumber = InRoundNumber;
 
@@ -121,7 +143,6 @@ bool UJoustRoundCoordinator::StartRound(int32 InRoundNumber)
 
 	bRoundActive = true;
 
-	//Draw, Ban 등 준비 끝나면 Phase1 진행
 	FlowState = ERoundFlowState::ReadyForStrategy;
 
 	return true;
@@ -129,7 +150,7 @@ bool UJoustRoundCoordinator::StartRound(int32 InRoundNumber)
 
 bool UJoustRoundCoordinator::BeginStrategyPhase()
 {
-	if (RuleSet == nullptr)
+	if (RuleSet == nullptr || StrategyService == nullptr || !StrategyService->IsRoundPrepared())
 		return false;
 
 	return BeginTimedPhase(
@@ -143,10 +164,7 @@ bool UJoustRoundCoordinator::BeginStrategyPhase()
 
 bool UJoustRoundCoordinator::BeginAttackPhase()
 {
-	if (RuleSet == nullptr)
-		return false;
-
-	if (AttackService == nullptr)
+	if (RuleSet == nullptr || AttackService == nullptr || !AttackService->IsRoundPrepared())
 		return false;
 
 	const bool bStarted = BeginTimedPhase(
@@ -164,70 +182,81 @@ bool UJoustRoundCoordinator::BeginAttackPhase()
 	return bStarted;
 }
 
-bool UJoustRoundCoordinator::BeginDefensePhase(float InPlayerADefenseDuration, float InPlayerBDefenseDuration)
+bool UJoustRoundCoordinator::BeginDefensePhase()
 {
-	if(InPlayerADefenseDuration <= 0.0f || InPlayerBDefenseDuration <= 0.0f)
+	if (!ArePredictionsPrepared() || PhaseCoordinator == nullptr || AToBPredictionService == nullptr || BToAPredictionService == nullptr)
+		return false;
+	
+	const float AToBDuration = AToBPredictionService->GetCurrentSettings().TotalDuration;
+	const float BToADuration = BToAPredictionService->GetCurrentSettings().TotalDuration;
+
+	if (AToBDuration <= 0.0f || BToADuration <= 0.0f)
+		return false;
+	
+	if (!StartPredictionPlayback())
 		return false;
 
-	//더 긴 방어시간 = 긴 제한시간
-	const float DefensePhaseDuration = FMath::Max(InPlayerADefenseDuration, InPlayerBDefenseDuration);
-
-	return BeginTimedPhase(
+	if (!BeginTimedPhase(
 		EJoustPhase::Defense,
-		DefensePhaseDuration,
+		FMath::Max(AToBDuration, BToADuration),
 		0.0f,
-		ERoundFlowState::ReadyForDefense, ERoundFlowState::Defense
-	);
+		ERoundFlowState::ReadyForDefense,
+		ERoundFlowState::Defense))
+	{
+		AToBPredictionController->StopPlayback();
+		BToAPredictionController->StopPlayback();
+
+		bPredictionPlaybackCompleted = false;
+
+		return false;
+	}
+
+	AToBImpactTime = PhaseCoordinator->GetPhaseStartTime() + AToBDuration;
+
+	BToAImpactTime = PhaseCoordinator->GetPhaseStartTime() + BToADuration;
+
+	return true;
 }
 
 void UJoustRoundCoordinator::MarkPlayerAComplete()
 {
-	if (!bRoundActive)
+	if (!bRoundActive || PhaseCoordinator == nullptr)
 		return;
 
-	if (PhaseCoordinator == nullptr)
-		return;
-
-	//계산, 완료 확인, 남은시간 단축은 PhaseCoordinator 책임
 	PhaseCoordinator->MarkPlayerAComplete();
+
+	SyncPhasePublicState();
 }
 
 void UJoustRoundCoordinator::MarkPlayerBComplete()
 {
-	if (!bRoundActive)
+	if (!bRoundActive || PhaseCoordinator == nullptr)
 		return;
 
-	if (PhaseCoordinator == nullptr)
-		return;
-
-	//계산, 완료 확인, 남은시간 단축은 PhaseCoordinator 책임
 	PhaseCoordinator->MarkPlayerBComplete();
+
+	SyncPhasePublicState();
 }
 
-bool UJoustRoundCoordinator::ResolveRound(
-	const FJoustAttackData & InAAttackData, const FJoustDefenseData & InBDefenseData, float InAToBImpactTime, 
-	const FJoustAttackData & InBAttackData, const FJoustDefenseData & InADefenseData, float InBToAImpactTime)
+bool UJoustRoundCoordinator::ResolveRound()
 {
-	if (!bRoundActive)
+	if (!bRoundActive ||
+		FlowState != ERoundFlowState::ReadyForResolve ||
+		PhaseCoordinator == nullptr ||
+		RuleSet == nullptr ||
+		RandomProvider == nullptr)
 		return false;
 
-	if (FlowState != ERoundFlowState::ReadyForResolve)
-		return false;
+	AJoustPlayerState* PlayerAStatePtr = PlayerAState.Get();
+	AJoustPlayerState* PlayerBStatePtr = PlayerBState.Get();
 
-	if (PhaseCoordinator == nullptr)
-		return false;
+	UJoustMatchCoordinator* MatchCoordinatorPtr = MatchCoordinator.Get();
 
-	if (RuleSet == nullptr)
+	if (PlayerAStatePtr == nullptr || PlayerBStatePtr == nullptr || MatchCoordinatorPtr == nullptr)
 		return false;
 	
-	if (RandomProvider == nullptr)
-		return false;
-
-	//Resolver호출 전 재진입 차단
 	FlowState = ERoundFlowState::Resolving;
 
-	//Resolve는 Timer와 Player 입력이 없는 내부 계산용 Phase
-	//아직 Resolver를 호출전 -> ReadyForResolve 복귀해도 안전
 	if (!PhaseCoordinator->SetNoneTimedPhase(EJoustPhase::Resolve))
 	{
 		FlowState = ERoundFlowState::ReadyForResolve;
@@ -235,38 +264,35 @@ bool UJoustRoundCoordinator::ResolveRound(
 		return false;
 	}
 
-	//이번 라운드에서 확정된 양쪽 Attack / Defense 데이터 보관
-	PlayerAAttackData = InAAttackData;
-	PlayerBAttackData = InBAttackData;
+	SyncPhasePublicState();
 
-	PlayerADefenseData = InADefenseData;
-	PlayerBDefenseData = InBDefenseData;
-
-	AToBImpactTime = InAToBImpactTime;
-	BToAImpactTime = InBToAImpactTime;
-
-	//실제 전투 결과 만들기
-	CurrentRoundResult = FJoustRoundResolver::Reslove(
+	CurrentRoundResult = FJoustRoundResolver::Resolve(
 		RoundNumber,
-		PlayerAAttackData, PlayerBDefenseData, AToBImpactTime,
-		PlayerBAttackData, PlayerADefenseData, BToAImpactTime,	
-		*RuleSet, *RandomProvider
-	);
+		PlayerAAttackData,
+		PlayerBDefenseData,
+		AToBImpactTime,
+		PlayerBAttackData,
+		PlayerADefenseData,
+		BToAImpactTime,
+		*RuleSet,
+		*RandomProvider);
 
-	//일어난 사건을 연출하기 위한 RoundResult Phase로 이동
 	if (!PhaseCoordinator->SetNoneTimedPhase(EJoustPhase::RoundResult))
 		return false;
 
+	SyncPhasePublicState();
+	
 	FlowState = ERoundFlowState::RoundResult;
 
-	UJoustMatchCoordinator* MatchCoordinatorPtr = MatchCoordinator.Get();
+	MatchCoordinatorPtr->HandleRoundResolved(CurrentRoundResult);
 
-	if (MatchCoordinatorPtr != nullptr)
+	ApplyRoundResultToPlayerStates(*PlayerAStatePtr, *PlayerBStatePtr, MatchCoordinatorPtr->GetPlayerAScore(), MatchCoordinatorPtr->GetPlayerBScore());
+
+	if (AJoustGameState* GameStatePtr = GameState.Get())
 	{
-		MatchCoordinatorPtr->HandleRoundResolved(CurrentRoundResult);
+		GameStatePtr->SetLastRoundResult(CurrentRoundResult);
 	}
 
-	//방송
 	RoundResultEvent.Broadcast(CurrentRoundResult);
 
 	return true;
@@ -326,9 +352,9 @@ bool UJoustRoundCoordinator::CompleteRoundResultPhase()
 	return true;
 }
 
-bool UJoustRoundCoordinator::PreparePredictions(const FJoustAttackData& InPlayerAAttackData, const FJoustAttackData& InPlayerBAttackData, float PlayerAReading, float PlayerBReading)
+bool UJoustRoundCoordinator::PreparePredictions()
 {
-	if (!bRoundActive || FlowState != ERoundFlowState::ReadyForDefense || !AToBPredictionService || !BToAPredictionService)
+	if (!bRoundActive || FlowState != ERoundFlowState::ReadyForDefense || AToBPredictionService == nullptr || BToAPredictionService == nullptr)
 		return false;
 
 
@@ -336,12 +362,12 @@ bool UJoustRoundCoordinator::PreparePredictions(const FJoustAttackData& InPlayer
 	BToAPredictionService->EndRound();
 
 	if (!AToBPredictionService->PreparePrediction(
-		InPlayerAAttackData.AttackType,
-		InPlayerAAttackData.AttackPoint,
-		InPlayerAAttackData.PredictionSeed,
-		InPlayerAAttackData.Deception,
-		InPlayerAAttackData.Quickness,
-		PlayerBReading))
+		PlayerAAttackData.AttackType,
+		PlayerAAttackData.AttackPoint,
+		PlayerAAttackData.PredictionSeed,
+		PlayerAAttackData.Deception,
+		PlayerAAttackData.Quickness,
+		PlayerBDefenseData.Reading))
 	{
 		AToBPredictionService->EndRound();
 		BToAPredictionService->EndRound();
@@ -349,12 +375,12 @@ bool UJoustRoundCoordinator::PreparePredictions(const FJoustAttackData& InPlayer
 	}
 
 	if (!BToAPredictionService->PreparePrediction(
-		InPlayerBAttackData.AttackType,
-		InPlayerBAttackData.AttackPoint,
-		InPlayerBAttackData.PredictionSeed,
-		InPlayerBAttackData.Deception,
-		InPlayerBAttackData.Quickness,
-		PlayerAReading))
+		PlayerBAttackData.AttackType,
+		PlayerBAttackData.AttackPoint,
+		PlayerBAttackData.PredictionSeed,
+		PlayerBAttackData.Deception,
+		PlayerBAttackData.Quickness,
+		PlayerADefenseData.Reading))
 	{
 		AToBPredictionService->EndRound();
 		BToAPredictionService->EndRound();
@@ -409,6 +435,118 @@ bool UJoustRoundCoordinator::StartPredictionPlayback()
 	return true;
 }
 
+void UJoustRoundCoordinator::ApplyRoundResultToPlayerStates(
+	AJoustPlayerState& PlayerAStateRef, AJoustPlayerState& PlayerBStateRef, int32 PlayerAScore, int32 PlayerBScore)
+{
+	const FJoustExchangeResult& AToBExchange = CurrentRoundResult.AtoBExchangeResult;
+	const FJoustExchangeResult& BToAExchange = CurrentRoundResult.BtoAExchangeResult;
+
+	FJoustAttackHistory PlayerAAttackHistory{};
+
+	PlayerAAttackHistory.RoundNumber = CurrentRoundResult.RoundNumber;
+	PlayerAAttackHistory.AttackPoint = AToBExchange.AttackData.AttackPoint;
+	PlayerAAttackHistory.AttackType = AToBExchange.AttackData.AttackType;
+	PlayerAAttackHistory.OpponentShieldPoint = PlayerBDefenseData.ShieldPoint;
+	PlayerAAttackHistory.OpponentDefenseResult = AToBExchange.DefenseResult;
+	PlayerAAttackHistory.bScored = AToBExchange.ScoreDelta > 0;
+	PlayerAAttackHistory.bOpponentUnhorsed = AToBExchange.bDefenderUnhorsed;
+
+	FJoustDefenseHistory PlayerADefenseHistory{};
+
+	PlayerADefenseHistory.RoundNumber = CurrentRoundResult.RoundNumber;
+	PlayerADefenseHistory.OpponentAttackPoint = BToAExchange.AttackData.AttackPoint;
+	PlayerADefenseHistory.OpponentAttackType = BToAExchange.AttackData.AttackType;
+	PlayerADefenseHistory.ShieldPoint = PlayerADefenseData.ShieldPoint;
+	PlayerADefenseHistory.DefenseResult = BToAExchange.DefenseResult;
+	PlayerADefenseHistory.bConcededScore = BToAExchange.ScoreDelta > 0;
+	PlayerADefenseHistory.bUnhorsed = BToAExchange.bDefenderUnhorsed;
+
+	FJoustAttackHistory PlayerBAttackHistory{};
+
+	PlayerBAttackHistory.RoundNumber = CurrentRoundResult.RoundNumber;
+	PlayerBAttackHistory.AttackPoint = BToAExchange.AttackData.AttackPoint;
+	PlayerBAttackHistory.AttackType = BToAExchange.AttackData.AttackType;
+	PlayerBAttackHistory.OpponentShieldPoint = PlayerADefenseData.ShieldPoint;
+	PlayerBAttackHistory.OpponentDefenseResult = BToAExchange.DefenseResult;
+	PlayerBAttackHistory.bScored = BToAExchange.ScoreDelta > 0;
+	PlayerBAttackHistory.bOpponentUnhorsed = BToAExchange.bDefenderUnhorsed;
+
+	FJoustDefenseHistory PlayerBDefenseHistory{};
+
+	PlayerBDefenseHistory.RoundNumber = CurrentRoundResult.RoundNumber;
+	PlayerBDefenseHistory.OpponentAttackPoint = AToBExchange.AttackData.AttackPoint;
+	PlayerBDefenseHistory.OpponentAttackType = AToBExchange.AttackData.AttackType;
+	PlayerBDefenseHistory.ShieldPoint = PlayerBDefenseData.ShieldPoint;
+	PlayerBDefenseHistory.DefenseResult = AToBExchange.DefenseResult;
+	PlayerBDefenseHistory.bConcededScore = AToBExchange.ScoreDelta > 0;
+	PlayerBDefenseHistory.bUnhorsed = AToBExchange.bDefenderUnhorsed;
+
+	PlayerAStateRef.AddAttackHistory(PlayerAAttackHistory);
+	PlayerAStateRef.AddDefenseHistory(PlayerADefenseHistory);
+
+	PlayerBStateRef.AddAttackHistory(PlayerBAttackHistory);
+	PlayerBStateRef.AddDefenseHistory(PlayerBDefenseHistory);
+
+	PlayerAStateRef.SetLastDefenseResult(BToAExchange.DefenseResult);
+
+	PlayerBStateRef.SetLastDefenseResult(AToBExchange.DefenseResult);
+
+	if (BToAExchange.DefenseResult.bIsEdgeParry)
+	{
+		PlayerAStateRef.SetHasBanRight(true);
+	}
+
+	if (AToBExchange.DefenseResult.bIsEdgeParry)
+	{
+		PlayerBStateRef.SetHasBanRight(true);
+	}
+
+	if (BToAExchange.bDefenderUnhorsed)
+	{
+		PlayerAStateRef.SetUnhorsed(true);
+	}
+
+	if (AToBExchange.bDefenderUnhorsed)
+	{
+		PlayerBStateRef.SetUnhorsed(true);
+	}
+
+	PlayerAStateRef.SetScore(PlayerAScore);
+	PlayerBStateRef.SetScore(PlayerBScore);
+}
+
+void UJoustRoundCoordinator::SyncPhasePublicState()
+{
+	AJoustGameState* GameStatePtr = GameState.Get();
+
+	if (GameStatePtr == nullptr || PhaseCoordinator == nullptr)
+		return;
+	
+	GameStatePtr->SetPhaseState(PhaseCoordinator->GetCurrentPhase(), PhaseCoordinator->GetPhaseEndTime());
+}
+
+void UJoustRoundCoordinator::SyncStrategyPublicCards()
+{
+	AJoustGameState* GameStatePtr = GameState.Get();
+
+	if (GameStatePtr == nullptr || StrategyService == nullptr)
+		return;
+	
+	TArray<FName> PublicCardIDs;
+
+	PublicCardIDs.Reserve(StrategyService->GetPublicCards().Num());
+
+	for (UJoustStrategyCardDataAsset* Card : StrategyService->GetPublicCards())
+	{
+		if (Card != nullptr)
+		{
+			PublicCardIDs.Add(Card->CardID);
+		}
+	}
+
+	GameStatePtr->SetPublicStrategyCardIDs(PublicCardIDs);
+}
+
 bool UJoustRoundCoordinator::SubmitStrategyBan(bool bPlayerA, const IJoustStrategyInput& StrategyInput)
 {
 	if (!bRoundActive || FlowState != ERoundFlowState::Strategy || StrategyService == nullptr)
@@ -419,7 +557,17 @@ bool UJoustRoundCoordinator::SubmitStrategyBan(bool bPlayerA, const IJoustStrate
 	if (!StrategyInput.TryGetBannedStrategyCardID(CardID))
 		return false;
 
-	return StrategyService->SubmitBan(bPlayerA, CardID);
+	if (!StrategyService->SubmitBan(bPlayerA, CardID))
+		return false;
+
+	AJoustGameState* GameStatePtr = GameState.Get();
+	
+	if (GameStatePtr != nullptr)
+	{
+		GameStatePtr->SetBannedCardIDForPlayer(!bPlayerA, CardID);
+	}
+
+	return true;
 }
 
 bool UJoustRoundCoordinator::SubmitStrategySelection(bool bPlayerA, const IJoustStrategyInput& StrategyInput)
@@ -452,12 +600,20 @@ bool UJoustRoundCoordinator::SubmitAttack(bool bPlayerA, const IJoustAttackInput
 	if (!bRoundActive || FlowState != ERoundFlowState::Attack || AttackService == nullptr || !AttackInput.IsAttackConfirmed())
 		return false;
 
+	AJoustPlayerState* PlayerState = bPlayerA ? PlayerAState.Get() : PlayerBState.Get();
+
+	if (PlayerState == nullptr)
+		return false;
+
 	FJoustAttackData AttackData{};
+
 	AttackData.AttackPoint = AttackInput.GetAttackPoint();
 	AttackData.AttackType = AttackInput.GetAttackType();
 
 	if (!AttackService->SubmitAttack(bPlayerA, AttackData))
 		return false;
+
+	PlayerState->SetRemainingAttackUses(AttackData.AttackType, AttackService->GetRemainingUses(bPlayerA, AttackData.AttackType));
 
 	if (bPlayerA)
 	{
@@ -487,6 +643,31 @@ bool UJoustRoundCoordinator::SubmitDefense(bool bPlayerA, const IJoustDefenseInp
 	return true;
 }
 
+bool UJoustRoundCoordinator::SetPlayerStates(AJoustPlayerState* InPlayerAState, AJoustPlayerState* InPlayerBState)
+{
+	if (bRoundActive)
+		return false;
+
+	if (InPlayerAState == nullptr || InPlayerBState == nullptr || InPlayerAState == InPlayerBState)
+		return false;
+	
+	if (AttackService == nullptr || !AttackService->IsMatchUsageInitialized())
+		return false;
+	
+	PlayerAState = InPlayerAState;
+	PlayerBState = InPlayerBState;
+
+	if (!SyncAttackUsageStates())
+	{
+		PlayerAState.Reset();
+		PlayerBState.Reset();
+
+		return false;
+	}
+
+	return true;
+}
+
 void UJoustRoundCoordinator::BeginDestroy()
 {
 	if (PhaseCoordinator != nullptr)
@@ -510,6 +691,11 @@ void UJoustRoundCoordinator::BeginDestroy()
 
 	RandomProvider = nullptr;
 
+	PlayerAState.Reset();
+	PlayerBState.Reset();
+
+	GameState.Reset();
+
 	Super::BeginDestroy();
 }
 
@@ -519,22 +705,15 @@ bool UJoustRoundCoordinator::BeginTimedPhase(
 	float InShortenRemainingTime, 
 	ERoundFlowState InRequiredState, ERoundFlowState InActiveState)
 {
-	if (!bRoundActive)
+	if (!bRoundActive || FlowState != InRequiredState || PhaseCoordinator == nullptr)
 		return false;
 
-	//올바른 Ready상태에서만 해당 Phase로 진입가능
-	if (FlowState != InRequiredState)
-		return false;
-
-	if (PhaseCoordinator == nullptr)
-		return false;
-
-	const bool bStarted = PhaseCoordinator->StartTimedPhase(InPhase, InDurationSeconds, InShortenRemainingTime);
-
-	if (!bStarted)
+	if (!PhaseCoordinator->StartTimedPhase(InPhase, InDurationSeconds, InShortenRemainingTime))
 		return false;
 
 	FlowState = InActiveState;
+
+	SyncPhasePublicState();
 
 	return true;
 }
@@ -544,33 +723,92 @@ void UJoustRoundCoordinator::HandlePhaseEnded(EJoustPhase EndedPhase)
 	if (!bRoundActive)
 		return;
 
+	SyncPhasePublicState();
+
 	switch (EndedPhase)
 	{
 
 	case EJoustPhase::Strategy:
-		if (FlowState == ERoundFlowState::Strategy)
-		{
-			FlowState = ERoundFlowState::ReadyForAttack;
-		}
+	{
+		if (FlowState != ERoundFlowState::Strategy || StrategyService == nullptr || AttackService == nullptr)
+			break;
+
+		AJoustPlayerState* PlayerAStatePtr = PlayerAState.Get();
+		AJoustPlayerState* PlayerBStatePtr = PlayerBState.Get();
+
+		if (PlayerAStatePtr == nullptr || PlayerBStatePtr == nullptr)
+			break;
+
+		if (!StrategyService->FinalizeStrategy())
+			break;
+
+		PlayerAStatePtr->SetCurrentStats(StrategyService->GetPlayerACurrentStats());
+		PlayerBStatePtr->SetCurrentStats(StrategyService->GetPlayerBCurrentStats());
+
+		PlayerAStatePtr->SetSelectedStrategyCardID(StrategyService->GetSelectedCardID(true));
+		PlayerBStatePtr->SetSelectedStrategyCardID(StrategyService->GetSelectedCardID(false));
+
+		if (!AttackService->PrepareRound(PlayerAStatePtr->GetCurrentStats(), PlayerBStatePtr->GetCurrentStats()))
+			break;
+
+		FlowState = ERoundFlowState::ReadyForAttack;
+
 		break;
+	}
 	
 	case EJoustPhase::Attack:
-		if (FlowState == ERoundFlowState::Attack)
-		{
-			if (AttackService != nullptr)
-			{
-				AttackService->SetSubmissionOpen(false);
-			}
-			FlowState = ERoundFlowState::ReadyForDefense;
-		}
+	{
+		if (FlowState != ERoundFlowState::Attack || AttackService == nullptr)
+			break;
+
+		AttackService->SetSubmissionOpen(false);
+
+		if (!AttackService->AreBothPlayersComplete())
+			break;
+
+		AJoustPlayerState* PlayerAStatePtr = PlayerAState.Get();
+		AJoustPlayerState* PlayerBStatePtr = PlayerBState.Get();
+
+		if (PlayerAStatePtr == nullptr || PlayerBStatePtr == nullptr)
+			break;
+
+		PlayerAAttackData = AttackService->GetPlayerAAttackData();
+		PlayerBAttackData = AttackService->GetPlayerBAttackData();
+
+		PlayerADefenseData = FJoustDefenseData{};
+		PlayerBDefenseData = FJoustDefenseData{};
+
+		const FJoustPlayerStats& PlayerAStats = PlayerAStatePtr->GetCurrentStats();
+		const FJoustPlayerStats& PlayerBStats = PlayerBStatePtr->GetCurrentStats();
+
+		PlayerADefenseData.DefenderId = 0;
+		PlayerADefenseData.Stability = PlayerAStats.Stability;
+		PlayerADefenseData.Reading = PlayerAStats.Reading;
+		PlayerADefenseData.ShieldMobility = PlayerAStats.ShieldMobility;
+		PlayerADefenseData.ParrySense = PlayerAStats.ParrySense;
+
+		PlayerBDefenseData.DefenderId = 1;
+		PlayerBDefenseData.Stability = PlayerBStats.Stability;
+		PlayerBDefenseData.Reading = PlayerBStats.Reading;
+		PlayerBDefenseData.ShieldMobility = PlayerBStats.ShieldMobility;
+		PlayerBDefenseData.ParrySense = PlayerBStats.ParrySense;
+
+		FlowState = ERoundFlowState::ReadyForDefense;
+
+		if (!PreparePredictions())
+			break;
+
 		break;
+	}
 
 	case EJoustPhase::Defense:
+	{
 		if (FlowState == ERoundFlowState::Defense)
 		{
 			FlowState = ERoundFlowState::ReadyForResolve;
 		}
 		break;
+	}
 
 	default:
 		break;
@@ -606,4 +844,28 @@ void UJoustRoundCoordinator::HandlePredictionPlaybackCompleted()
 
 	if (!bRoundActive || FlowState != ERoundFlowState::Defense || PhaseCoordinator == nullptr)
 		return;
+}
+
+bool UJoustRoundCoordinator::SyncAttackUsageStates()
+{
+	if (AttackService == nullptr)
+		return false;
+
+	AJoustPlayerState* PlayerAStatePtr = PlayerAState.Get();
+
+	AJoustPlayerState* PlayerBStatePtr = PlayerBState.Get();
+
+	if (PlayerAStatePtr == nullptr || PlayerBStatePtr == nullptr)
+		return false;
+	
+	TMap<EJoustAttackType, int32> PlayerAUsage;
+	TMap<EJoustAttackType, int32> PlayerBUsage;
+
+	if (!AttackService->GetUsageSnapshot(true, PlayerAUsage) || !AttackService->GetUsageSnapshot(false, PlayerBUsage))
+		return false;
+
+	PlayerAStatePtr->SetAttackUsageSnapshot(PlayerAUsage);
+	PlayerBStatePtr->SetAttackUsageSnapshot(PlayerBUsage);
+
+	return true;
 }

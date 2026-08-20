@@ -17,8 +17,7 @@ class IJoustRandomProvider;
 class JOUST_API FJoustRoundResolver final
 {
 public:
-	/** RoundResult를 만드는 함수 */
-	static FJoustRoundResult Reslove(
+	static FJoustRoundResult Resolve(
 		int32 RoundNumber,
 		const FJoustAttackData& PlayerAAttackData, const FJoustDefenseData& PlayerBDefenseData,	float PlayerAToBImpactTime,
 		const FJoustAttackData& PlayerBAttackData, const FJoustDefenseData& PlayerADefenseData,	float PlayerBToAImpactTime,
