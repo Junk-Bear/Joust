@@ -7,6 +7,7 @@
 #include "Attack/JoustAttackTypes.h"
 #include "Defense/JoustDefenseTypes.h"
 #include "Result/JoustResultTypes.h"
+#include "Prediction/JoustPredictionTypes.h"
 #include "JoustRoundCoordinator.generated.h"
 
 class UJoustPhaseCoordinator;
@@ -43,6 +44,11 @@ public: // ########## 델리게이트 블록 ##########
 	/** 양쪽 방향 모두 Prediction 재생이 완료 되었음을 알리는 이벤트 */
 	DECLARE_EVENT(UJoustRoundCoordinator, FOnPredictionPlaybackCompleted);
 
+	/** Timed Phase가 실제 시작되었음을 알리는 이벤트 */
+	DECLARE_EVENT_OneParam(UJoustRoundCoordinator, FOnPhaseStarted, EJoustPhase);
+
+	/** Strategy의 필요한 카드 봉인이 모두 완료되었음을 알리는 이벤트 */
+	DECLARE_EVENT(UJoustRoundCoordinator, FOnStrategyBansCompleted);
 
 private: // ########## 내부용 ENUM ##########
 
@@ -128,6 +134,11 @@ public: // ########## public 함수 블록 ##########
 	/** 실제 Player A / B PlayerState를 연결하고 현재 Attack Usage를 동기화 */
 	bool SetPlayerStates(AJoustPlayerState* InPlayerAState, AJoustPlayerState* InPlayerBState);
 
+	/** 새 경기 시작 전에 Round 계층의 경기 단위 상태를 초기화 */
+	bool ResetMatchState();
+
+	/** 해당 방어자가 현재 볼 수 있는 공개 Prediction 상태 반환 */
+	bool GetDefensePredictionState(bool bPlayerA, FJoustPredictionState& OutState) const;
 
 protected: // ########## protected 함수 블록 ##########
 
@@ -246,6 +257,12 @@ private: // ########## private 변수 블록 ##########
 	/** 공개 경기 상태 */
 	TWeakObjectPtr<AJoustGameState> GameState;
 
+	/** Phase 시작 이벤트용 */
+	FOnPhaseStarted PhaseStartedEvent;
+
+	/** Strategy Ban 완료 이벤트용 */
+	FOnStrategyBansCompleted StrategyBansCompletedEvent;
+
 
 public: // ########## GET SET 블록 ##########
 
@@ -276,4 +293,8 @@ public: // ########## GET SET 블록 ##########
 	FORCEINLINE bool IsPredictionPlaybackCompleted() const { return bPredictionPlaybackCompleted; }
 
 	FORCEINLINE void SetGameState(AJoustGameState* InGameState) { GameState = InGameState; }
+
+	FORCEINLINE FOnPhaseStarted& OnPhaseStarted() { return PhaseStartedEvent; }
+
+	FORCEINLINE FOnStrategyBansCompleted& OnStrategyBansCompleted() { return StrategyBansCompletedEvent; }
 };

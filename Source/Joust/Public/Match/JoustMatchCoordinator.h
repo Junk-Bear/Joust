@@ -56,6 +56,9 @@ public: // ########## public 함수 블록 ##########
 	/** 최종 MatchResult 단계 표시 / 연출 끝났음을 알림 */
 	bool CompleteMatchResultPhase();
 
+	/** 현재 Match가 시작되어 아직 완전히 종료되지 않았는지 확인 */
+	bool IsMatchActive() const;
+
 protected: // ########## protected 함수 블록 ##########
 
 	/** WeakParent 명시적 해제 */

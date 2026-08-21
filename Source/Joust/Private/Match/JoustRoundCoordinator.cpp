@@ -145,6 +145,17 @@ bool UJoustRoundCoordinator::StartRound(int32 InRoundNumber)
 
 	FlowState = ERoundFlowState::ReadyForStrategy;
 
+	if (!BeginStrategyPhase())
+	{
+		StrategyService->EndRound();
+
+		bRoundActive = false;
+
+		FlowState = ERoundFlowState::Finished;
+
+		return false;
+	}
+
 	return true;
 }
 
@@ -345,12 +356,11 @@ bool UJoustRoundCoordinator::CompleteRoundResultPhase()
 
 	UJoustMatchCoordinator* MatchCoordinatorPtr = MatchCoordinator.Get();
 
-	if (MatchCoordinatorPtr != nullptr)
-	{
-		MatchCoordinatorPtr->HandleRoundResolvedCompleted();
-	}
+	if (MatchCoordinatorPtr == nullptr)
+		return false;
 
-	return true;
+	return MatchCoordinatorPtr->HandleRoundResolvedCompleted();
+
 }
 
 bool UJoustRoundCoordinator::PreparePredictions()
@@ -568,6 +578,11 @@ bool UJoustRoundCoordinator::SubmitStrategyBan(bool bPlayerA, const IJoustStrate
 		GameStatePtr->SetBannedCardIDForPlayer(!bPlayerA, CardID);
 	}
 
+	if (StrategyService->AreBansComplete())
+	{
+		StrategyBansCompletedEvent.Broadcast();
+	}
+
 	return true;
 }
 
@@ -669,6 +684,71 @@ bool UJoustRoundCoordinator::SetPlayerStates(AJoustPlayerState* InPlayerAState, 
 	return true;
 }
 
+bool UJoustRoundCoordinator::ResetMatchState()
+{
+	if (bRoundActive ||
+		PhaseCoordinator == nullptr ||
+		PhaseCoordinator->IsPhaseActive() ||
+		StrategyService == nullptr ||
+		AttackService == nullptr)
+		return false;
+	
+	if (FlowState != ERoundFlowState::Idle && FlowState != ERoundFlowState::Finished)
+		return false;
+	
+	StrategyService->EndRound();
+
+	if (AToBPredictionController != nullptr)
+	{
+		AToBPredictionController->StopPlayback();
+	}
+
+	if (BToAPredictionController != nullptr)
+	{
+		BToAPredictionController->StopPlayback();
+	}
+
+	if (AToBPredictionService != nullptr)
+	{
+		AToBPredictionService->EndRound();
+	}
+
+	if (BToAPredictionService != nullptr)
+	{
+		BToAPredictionService->EndRound();
+	}
+
+	if (!AttackService->ResetMatchUsage())
+		return false;
+	
+	PlayerAState.Reset();
+	PlayerBState.Reset();
+
+	RoundNumber = 0;
+
+	bPredictionPlaybackCompleted = false;
+
+	ResetRoundData();
+
+	FlowState = ERoundFlowState::Idle;
+
+	return true;
+}
+
+bool UJoustRoundCoordinator::GetDefensePredictionState(bool bPlayerA, FJoustPredictionState& OutState) const
+{
+	OutState = FJoustPredictionState{};
+
+	const UJoustPredictionSeriesController* PredictionController = bPlayerA ? BToAPredictionController.Get() : AToBPredictionController.Get();
+
+	if (PredictionController == nullptr)
+		return false;
+
+	PredictionController->BuildPredictionState(OutState);
+
+	return OutState.bIsPredictionVisible && !OutState.DisplayCircles.IsEmpty();
+}
+
 void UJoustRoundCoordinator::BeginDestroy()
 {
 	if (PhaseCoordinator != nullptr)
@@ -716,6 +796,8 @@ bool UJoustRoundCoordinator::BeginTimedPhase(
 
 	SyncPhasePublicState();
 
+	PhaseStartedEvent.Broadcast(InPhase);
+
 	return true;
 }
 
@@ -753,6 +835,8 @@ void UJoustRoundCoordinator::HandlePhaseEnded(EJoustPhase EndedPhase)
 			break;
 
 		FlowState = ERoundFlowState::ReadyForAttack;
+
+		BeginAttackPhase();
 
 		break;
 	}
@@ -799,15 +883,20 @@ void UJoustRoundCoordinator::HandlePhaseEnded(EJoustPhase EndedPhase)
 		if (!PreparePredictions())
 			break;
 
+		BeginDefensePhase();
+
 		break;
 	}
 
 	case EJoustPhase::Defense:
 	{
-		if (FlowState == ERoundFlowState::Defense)
-		{
-			FlowState = ERoundFlowState::ReadyForResolve;
-		}
+		if (FlowState != ERoundFlowState::Defense)
+			break;
+		
+		FlowState = ERoundFlowState::ReadyForResolve;
+
+		ResolveRound();
+
 		break;
 	}
 

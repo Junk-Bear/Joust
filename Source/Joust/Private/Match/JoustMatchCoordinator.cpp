@@ -79,6 +79,11 @@ bool UJoustMatchCoordinator::CompleteMatchResultPhase()
 	return true;
 }
 
+bool UJoustMatchCoordinator::IsMatchActive() const
+{
+	return FlowState != EMatchFlowState::Idle && FlowState != EMatchFlowState::Finished;
+}
+
 void UJoustMatchCoordinator::BeginDestroy()
 {
 	if (RoundCoordinator != nullptr)
@@ -157,7 +162,7 @@ bool UJoustMatchCoordinator::HandleRoundResolvedCompleted()
 
 		FlowState = EMatchFlowState::ReadyForRound;		
 
-		return StartCurrentRound();;
+		return StartCurrentRound();
 	}
 
 	UJoustPhaseCoordinator* PhaseCoordinatorPtr = PhaseCoordinator.Get();
