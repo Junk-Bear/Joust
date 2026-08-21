@@ -28,13 +28,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Match", meta = (ClampMin = "1"))
 	int32 BaseRoundCount = 5;
 
-	/** 연장전을 허용 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Match")
-	bool bContinueOvertimeUntilWinner = true;
-
 	// ====================
 	// Phase
 	// ====================
+
 	/** Phase 1 기본 제한 시간 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Phase", meta = (ClampMin = "0.0"))
 	float StrategyPhaseDuration = 20.0f;

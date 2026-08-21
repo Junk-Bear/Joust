@@ -78,7 +78,7 @@ private: // ########## private 함수 블록 ##########
 	* 
 	* Pending MatchResult기준 다음라운드 or MatchResult로 진행시킴
 	*/
-	void HandleRoundResolvedCompleted();
+	bool HandleRoundResolvedCompleted();
 
 	/** 경기 전체 런타임 데이터 초기화 */
 	void ResetMatchData();

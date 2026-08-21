@@ -35,9 +35,6 @@ public: // ########## public 함수 블록 ##########
 	/** Strategy / Attack / Defense 처럼 제한 시간이 있는 Phase */
 	bool StartTimedPhase(EJoustPhase InPhase, float InDurationSeconds, float InShortenRemainingTime);
 	
-	/** Resolve / RoundResult 처럼 Timer가 필요 없는 Phase */
-	bool NoneTimedPhase(EJoustPhase InPhase);
-
 	/**
 	* 상위 Coordinator가 강제로 현재 Timed Phase를 종료할 경우 사용됨
 	* 

@@ -146,29 +146,27 @@ void UJoustMatchCoordinator::HandleRoundResolved(FJoustRoundResult& RoundResult)
 	FlowState = EMatchFlowState::WaitingForRoundResultCompletion;
 }
 
-void UJoustMatchCoordinator::HandleRoundResolvedCompleted()
+bool UJoustMatchCoordinator::HandleRoundResolvedCompleted()
 {
 	if (FlowState != EMatchFlowState::WaitingForRoundResultCompletion)
-		return;
+		return false;
 
 	if (CurrentMatchResult.MatchOutcome == EJoustMatchOutcome::Undecided)
 	{
 		CurrentRoundNumber++;
 
-		FlowState = EMatchFlowState::ReadyForRound;
+		FlowState = EMatchFlowState::ReadyForRound;		
 
-		StartCurrentRound();
-
-		return;
+		return StartCurrentRound();;
 	}
 
 	UJoustPhaseCoordinator* PhaseCoordinatorPtr = PhaseCoordinator.Get();
 
 	if (PhaseCoordinatorPtr == nullptr)
-		return;
+		return false;
 
 	if (!PhaseCoordinatorPtr->SetNoneTimedPhase(EJoustPhase::MatchResult))
-		return;
+		return false;
 
 	AJoustGameState* GameStatePtr = GameState.Get();
 
@@ -182,6 +180,8 @@ void UJoustMatchCoordinator::HandleRoundResolvedCompleted()
 	FlowState = EMatchFlowState::MatchResult;
 
 	MatchResultEvent.Broadcast(CurrentMatchResult);
+
+	return true;
 }
 
 void UJoustMatchCoordinator::ResetMatchData()

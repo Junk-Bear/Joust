@@ -90,38 +90,6 @@ bool UJoustPhaseCoordinator::StartTimedPhase(EJoustPhase InPhase, float InDurati
 	return true;
 }
 
-bool UJoustPhaseCoordinator::NoneTimedPhase(EJoustPhase InPhase)
-{
-	//TimePhase가 아직 진행중이면 페이즈를 넘어가지 않게함
-	if (bPhaseActive)
-		return false;
-
-	CurrentPhase = InPhase;
-
-	UWorld* WorldPtr = World.Get();
-
-	if (WorldPtr != nullptr)
-	{
-		PhaseStartTime = WorldPtr->GetTimeSeconds();
-
-		PhaseEndTime = PhaseStartTime;
-	}
-	else
-	{
-		PhaseStartTime = 0.0f;
-		PhaseEndTime = 0.0f;
-	}
-
-	PhaseDuration = 0.0f;
-
-	ShortenRemainingTime = 0.0f;
-
-	bPlayerAComplete = false;
-	bPlayerBComplete = false;
-
-	return true;
-}
-
 void UJoustPhaseCoordinator::ForceEndTimedPhase()
 {
 	//논타임페이즈나 이미 종료된 페이즈면 무시

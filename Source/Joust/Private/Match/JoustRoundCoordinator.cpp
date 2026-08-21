@@ -310,13 +310,6 @@ bool UJoustRoundCoordinator::CompleteRoundResultPhase()
 
 	bRoundActive = false;
 
-	UJoustMatchCoordinator* MatchCoordinatorPtr = MatchCoordinator.Get();
-
-	if (MatchCoordinatorPtr != nullptr)
-	{
-		MatchCoordinatorPtr->HandleRoundResolvedCompleted();
-	}
-
 	if (StrategyService != nullptr)
 	{
 		StrategyService->EndRound();
@@ -347,6 +340,14 @@ bool UJoustRoundCoordinator::CompleteRoundResultPhase()
 	if (BToAPredictionService != nullptr)
 	{
 		BToAPredictionService->EndRound();
+	}
+
+
+	UJoustMatchCoordinator* MatchCoordinatorPtr = MatchCoordinator.Get();
+
+	if (MatchCoordinatorPtr != nullptr)
+	{
+		MatchCoordinatorPtr->HandleRoundResolvedCompleted();
 	}
 
 	return true;
@@ -841,9 +842,6 @@ void UJoustRoundCoordinator::HandlePredictionPlaybackCompleted()
 	bPredictionPlaybackCompleted = true;
 
 	PredictionPlaybackCompletedEvent.Broadcast();
-
-	if (!bRoundActive || FlowState != ERoundFlowState::Defense || PhaseCoordinator == nullptr)
-		return;
 }
 
 bool UJoustRoundCoordinator::SyncAttackUsageStates()
