@@ -16,6 +16,7 @@
 #include "Engine/World.h"
 #include "Attack/JoustAttackTypeDataAsset.h"
 #include "Prediction/JoustPredictionTypes.h"
+#include "Presentation/JoustHUD.h"
 
 AJoustGameMode::AJoustGameMode()
 {
@@ -23,6 +24,7 @@ AJoustGameMode::AJoustGameMode()
 	PlayerStateClass = AJoustPlayerState::StaticClass();
 	PlayerControllerClass = AJoustPlayerController::StaticClass();
 	DefaultPawnClass = AJoustPawn::StaticClass();
+	HUDClass = AJoustHUD::StaticClass();
 }
 
 bool AJoustGameMode::AreParticipantsReady() const
