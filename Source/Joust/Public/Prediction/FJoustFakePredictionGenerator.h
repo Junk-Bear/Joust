@@ -17,14 +17,14 @@ class JOUST_API FJoustFakePredictionGenerator final
 public: // ########## public 함수 블록 ##########
 
 	static bool Generate(
-		const FJoustPredictionSettings& Settings,
-		const FVector2D& AttackPoint,
-		int32 PredictionSeed,
-		const FVector2D& LanceBoxMin,
-		const FVector2D& LanceBoxMax,
-		int32 MaxRetries,
-		float MinFakeAttackPointDistance,
-		IJoustRandomProvider& RandomProvider,
+		const FJoustPredictionSettings& InSettings,
+		const FVector2D& InAttackPoint,
+		int32 InPredictionSeed,
+		const FVector2D& InLanceBoxMin,
+		const FVector2D& InLanceBoxMax,
+		int32 InMaxRetries,
+		float InMinFakeAttackPointDistance,
+		IJoustRandomProvider& InRandomProvider,
 		TArray<FJoustPredictionSeries>& OutFakeSeries);
 
 private: // ########## private 함수 블록 ##########
@@ -35,11 +35,11 @@ private: // ########## private 함수 블록 ##########
 	* X대칭, Y대칭, 대각대칭, 정중앙, 랜덤 총 5개 후보를 만듬
 	*/	
 	static bool GenerateFakeAttackPoint(
-		const FVector2D& AttackPoint,
-		const FVector2D& LanceBoxMin,
-		const FVector2D& LanceBoxMax,
-		int32 MaxRetries,
-		float MinFakeAttackPointDistance,
-		IJoustRandomProvider& RandomProvider,
+		const FVector2D& InAttackPoint,
+		const FVector2D& InLanceBoxMin,
+		const FVector2D& InLanceBoxMax,
+		int32 InMaxRetries,
+		float InMinFakeAttackPointDistance,
+		IJoustRandomProvider& InRandomProvider,
 		FVector2D& OutFakeAttackPoint);
 };

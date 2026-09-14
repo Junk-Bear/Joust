@@ -4,7 +4,7 @@
 #include "Defense/FJoustEdgeParryResolver.h"
 #include "Common/JoustCommonTypes.h"
 
-bool FJoustEdgeParryResolver::Resolve(EJoustGuardZone GuardZone, EJoustParryOutcome ParryOutcome)
+bool FJoustEdgeParryResolver::Resolve(EJoustGuardZone InGuardZone, EJoustParryOutcome InParryOutcome)
 {
-	return (GuardZone == EJoustGuardZone::Bad && ParryOutcome == EJoustParryOutcome::Success);
+	return (InGuardZone == EJoustGuardZone::Bad && InParryOutcome == EJoustParryOutcome::Success);
 }

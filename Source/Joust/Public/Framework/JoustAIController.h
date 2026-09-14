@@ -18,7 +18,7 @@ class JOUST_API AJoustAIController : public AAIController, public IJoustStrategy
 {
 	GENERATED_BODY()
 	
-public: // ########### 생성자용 블록 ##########
+public: // ########### 생성자 블록 ##########
 
 	AJoustAIController();
 

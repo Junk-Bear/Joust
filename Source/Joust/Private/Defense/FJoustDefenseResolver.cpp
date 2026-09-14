@@ -13,9 +13,9 @@
 namespace Joust::Private
 {
 	//가드존에 따른 보정값들 구하는 함수
-	float ResoveCriticalDefenseMultiplier(EJoustGuardZone GuardZone, EJoustParryOutcome ParryOutcome, const UJoustRuleSetDataAsset& RuleSet)
+	float ResoveCriticalDefenseMultiplier(EJoustGuardZone InGuardZone, EJoustParryOutcome InParryOutcome, const UJoustRuleSetDataAsset& InRuleSet)
 	{
-		switch (ParryOutcome)
+		switch (InParryOutcome)
 		{
 			//패링 성공
 		case EJoustParryOutcome::Success:
@@ -23,41 +23,41 @@ namespace Joust::Private
 
 			//패링 실패시
 		case EJoustParryOutcome::Failure:
-			switch (GuardZone)
+			switch (InGuardZone)
 			{
 			case EJoustGuardZone::Perfect:
-				return RuleSet.ParryFailurePerfectCriticalMultiplier;
+				return InRuleSet.ParryFailurePerfectCriticalMultiplier;
 
 			case EJoustGuardZone::Good:
-				return RuleSet.ParryFailureGoodCriticalMultiplier;
+				return InRuleSet.ParryFailureGoodCriticalMultiplier;
 
 			case EJoustGuardZone::Bad:
-				return RuleSet.ParryFailureBadCriticalMultiplier;
+				return InRuleSet.ParryFailureBadCriticalMultiplier;
 
 			case EJoustGuardZone::Outside:
 			default:
 				//아웃사이드 케이스 : 잘못된 경우의 수, 이미 ParryOutcom::NotAttempted여야 한다.
 				ensureMsgf(false, TEXT("Outside cannot ParryOutcome-Failure"));
 
-				return RuleSet.GuardOutsideCriticalMultiplier;
+				return InRuleSet.GuardOutsideCriticalMultiplier;
 			}
 
 			//패링 안함 => 가드판정에 따른 배율
 		case EJoustParryOutcome::NotAttempted:
-			switch (GuardZone)
+			switch (InGuardZone)
 			{
 			case EJoustGuardZone::Perfect:
-				return RuleSet.GuardPerfectCriticalMultiplier;
+				return InRuleSet.GuardPerfectCriticalMultiplier;
 
 			case EJoustGuardZone::Good:
-				return RuleSet.GuardGoodCriticalMultiplier;
+				return InRuleSet.GuardGoodCriticalMultiplier;
 
 			case EJoustGuardZone::Bad:
-				return RuleSet.GuardBadCriticalMultiplier;
+				return InRuleSet.GuardBadCriticalMultiplier;
 
 			case EJoustGuardZone::Outside:
 			default:
-				return RuleSet.GuardOutsideCriticalMultiplier;
+				return InRuleSet.GuardOutsideCriticalMultiplier;
 			}
 
 			//패링아웃컴이 없음 => 잘못된 경우의 수, 일단 체크 및 결정타 배율0.0
@@ -70,24 +70,24 @@ namespace Joust::Private
 }
 
 FJoustDefenseResult FJoustDefenseResolver::Resolve(
-	const FJoustAttackData& AttackData, 
-	const FJoustDefenseData& DefenseData, 
-	float impactTime, 
-	const UJoustRuleSetDataAsset& RuleSet)
+	const FJoustAttackData& InAttackData, 
+	const FJoustDefenseData& InDefenseData, 
+	float InImpactTime, 
+	const UJoustRuleSetDataAsset& InRuleSet)
 {
 	FJoustDefenseResult Result{};
 
 	//Result 멤버변수 값 채우기
 	Result.GuardZone = FJoustGuardResolver::Resolve(
-		AttackData.AttackPoint, DefenseData.ShieldPoint,
-		RuleSet.PerfectZoneRadius, RuleSet.GoodZoneRadius, RuleSet.BadZoneRadius,
+		InAttackData.AttackPoint, InDefenseData.ShieldPoint,
+		InRuleSet.PerfectZoneRadius, InRuleSet.GoodZoneRadius, InRuleSet.BadZoneRadius,
 		Result.HitDistance);
 
 	Result.ParryOutcome = FJoustParryResolver::Resolve(
-		DefenseData.bParryAttempted, Result.GuardZone,
-		DefenseData.ParryInputTime, impactTime,
-		DefenseData.ParrySense,
-		RuleSet.PerfectZoneParryWindow, RuleSet.GoodZoneParryWindow, RuleSet.BadZoneParryWindow,
+		InDefenseData.bParryAttempted, Result.GuardZone,
+		InDefenseData.ParryInputTime, InImpactTime,
+		InDefenseData.ParrySense,
+		InRuleSet.PerfectZoneParryWindow, InRuleSet.GoodZoneParryWindow, InRuleSet.BadZoneParryWindow,
 		Result.ParryTimingError, Result.AllowedParryWindow
 	);
 
@@ -97,7 +97,7 @@ FJoustDefenseResult FJoustDefenseResolver::Resolve(
 
 	Result.bBlockedScore = (Result.ParryOutcome == EJoustParryOutcome::Success);
 
-	Result.CriticalDefenseMultiplier = Joust::Private::ResoveCriticalDefenseMultiplier(Result.GuardZone, Result.ParryOutcome, RuleSet);
+	Result.CriticalDefenseMultiplier = Joust::Private::ResoveCriticalDefenseMultiplier(Result.GuardZone, Result.ParryOutcome, InRuleSet);
 
 	return Result;
 }

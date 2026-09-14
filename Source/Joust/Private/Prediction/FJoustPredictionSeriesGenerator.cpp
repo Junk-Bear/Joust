@@ -7,58 +7,58 @@
 #include "Prediction/JoustPredictionTypes.h"
 
 bool FJoustPredictionSeriesGenerator::Generate(
-	const FJoustPredictionSettings& Settings, 
-	const FVector2D& TargetPoint, 
-	int32 PredictionSeed, 
-	const FVector2D& LanceBoxMin, 
-	const FVector2D& LanceBoxMax, 
-	int32 MaxRetries, 
-	IJoustRandomProvider& RandomProvider, 
+	const FJoustPredictionSettings& InSettings, 
+	const FVector2D& InTargetPoint, 
+	int32 InPredictionSeed, 
+	const FVector2D& InLanceBoxMin, 
+	const FVector2D& InLanceBoxMax, 
+	int32 InMaxRetries, 
+	IJoustRandomProvider& InRandomProvider, 
 	FJoustPredictionSeries& OutSeries)
 {
 	OutSeries = FJoustPredictionSeries{};
 
-	if (!FMath::IsFinite(Settings.InitialRadius) ||
-		Settings.InitialRadius <= 0.0f ||
-		Settings.StageCount < 2 ||
-		Settings.StageRadiusRatios.Num() != Settings.StageCount ||
-		Settings.StageDurations.Num() != Settings.StageCount - 1 ||
-		MaxRetries <= 0)
+	if (!FMath::IsFinite(InSettings.InitialRadius) ||
+		InSettings.InitialRadius <= 0.0f ||
+		InSettings.StageCount < 2 ||
+		InSettings.StageRadiusRatios.Num() != InSettings.StageCount ||
+		InSettings.StageDurations.Num() != InSettings.StageCount - 1 ||
+		InMaxRetries <= 0)
 		return false;
 
 	FJoustPredictionSeries CandidateSeries;
 
 	CandidateSeries.Circles.Reserve(
-		Settings.StageCount);
+		InSettings.StageCount);
 
 	FJoustPredictionCircle CurrentCircle;
 
 	if (!FJoustInitialPredictionGenerator::Generate(
-		TargetPoint,
-		Settings.InitialRadius,
-		LanceBoxMin,
-		LanceBoxMax,
-		MaxRetries,
-		RandomProvider,
+		InTargetPoint,
+		InSettings.InitialRadius,
+		InLanceBoxMin,
+		InLanceBoxMax,
+		InMaxRetries,
+		InRandomProvider,
 		CurrentCircle))
 		return false;
 
 	CandidateSeries.Circles.Add(
 		CurrentCircle);
 
-	for (int i = 1; i < Settings.StageCount; ++i)
+	for (int i = 1; i < InSettings.StageCount; ++i)
 	{
 		FJoustPredictionCircle NextCircle;
 
 		if (!FJoustNextPredictionGenerator::Generate(
 			CurrentCircle,
-			Settings.InitialRadius *
-			Settings.StageRadiusRatios[i],
-			TargetPoint,
-			LanceBoxMin,
-			LanceBoxMax,
-			MaxRetries,
-			RandomProvider,
+			InSettings.InitialRadius *
+			InSettings.StageRadiusRatios[i],
+			InTargetPoint,
+			InLanceBoxMin,
+			InLanceBoxMax,
+			InMaxRetries,
+			InRandomProvider,
 			NextCircle))
 			return false;
 
@@ -67,7 +67,7 @@ bool FJoustPredictionSeriesGenerator::Generate(
 		CurrentCircle = NextCircle;
 	}
 
-	CandidateSeries.PredictionSeed = PredictionSeed;
+	CandidateSeries.PredictionSeed = InPredictionSeed;
 
 	OutSeries = MoveTemp(CandidateSeries);
 

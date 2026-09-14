@@ -18,7 +18,7 @@ class JOUST_API UJoustPredictionSeriesController final : public UObject, public 
 {
 	GENERATED_BODY()
 
-public: // ########## 생성자 소멸자용 블록 ##########
+public: // ########## 생성자 블록 ##########
 
 	UJoustPredictionSeriesController();
 
@@ -54,7 +54,7 @@ protected: // ########## protected 함수 블록 ##########
 	virtual void BeginDestroy() override;	
 	
 	/** TickableGameObject */
-	virtual void Tick(float DeltaTime) override;
+	virtual void Tick(float InDeltaTime) override;
 	virtual TStatId GetStatId() const override;
 	virtual UWorld* GetTickableGameObjectWorld() const override;
 

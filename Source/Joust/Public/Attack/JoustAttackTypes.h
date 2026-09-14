@@ -6,16 +6,11 @@
 
 /**
  * Phase 2에서 확정된 공격 한 번의 데이터.
- *
- * 중요:
- * AttackPoint는 Resolve 전까지 서버 비공개 데이터, 취급 주의
  */
-
 USTRUCT(BlueprintType)
 struct JOUST_API FJoustAttackData
 {
 	GENERATED_BODY()
-
 
 	/** 실제 공격점 */
 	UPROPERTY(BlueprintReadWrite, Category = "Joust|Attack")

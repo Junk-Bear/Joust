@@ -5,17 +5,17 @@
 #include "Player/JoustPlayerTypes.h"
 #include "Strategy/JoustStrategyTypes.h"
 
-FJoustPlayerStats FJoustCardEffectResolver::Resolve(const FJoustPlayerStats& BaseStats, const FJoustStrategyModifier& Modifier)
+FJoustPlayerStats FJoustCardEffectResolver::Resolve(const FJoustPlayerStats& InBaseStats, const FJoustStrategyModifier& InModifier)
 {
-	FJoustPlayerStats Result = BaseStats;
+	FJoustPlayerStats Result = InBaseStats;
 
-	Result.Finishing += Modifier.FinishingModifier;
-	Result.Deception += Modifier.DeceptionModifier;
-	Result.Quickness += Modifier.QuicknessModifier;
-	Result.Stability += Modifier.StabilityModifier;
-	Result.Reading += Modifier.ReadingModifier;
-	Result.ShieldMobility += Modifier.ShieldMobilityModifier;
-	Result.ParrySense += Modifier.ParrySenseModifier;
+	Result.Finishing += InModifier.FinishingModifier;
+	Result.Deception += InModifier.DeceptionModifier;
+	Result.Quickness += InModifier.QuicknessModifier;
+	Result.Stability += InModifier.StabilityModifier;
+	Result.Reading += InModifier.ReadingModifier;
+	Result.ShieldMobility += InModifier.ShieldMobilityModifier;
+	Result.ParrySense += InModifier.ParrySenseModifier;
 
 	return Result;
 }

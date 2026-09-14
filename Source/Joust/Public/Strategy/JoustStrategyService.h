@@ -29,24 +29,24 @@ public: // ########## public 함수 블록 ##########
 	bool PrepareRound(
 		const FJoustPlayerStats& InPlayerABaseStats,
 		const FJoustPlayerStats& InPlayerBBaseStats,
-		bool bPlayerAHasBanRight,
-		bool bPlayerBHasBanRight
+		bool bInPlayerAHasBanRight,
+		bool bInPlayerBHasBanRight
 	);
 
 	/** 종료시 모든 상태 초기화 */
 	void EndRound();
 
 	/** 공개 카드 봉인 */
-	bool SubmitBan(bool bPlayerA, FName CardID);
+	bool SubmitBan(bool bInPlayerA, FName InCardID);
 
 	/** 전략 카드 제출 */
-	bool SubmitStrategySelection(bool bPlayerA, FName CardID);
+	bool SubmitStrategySelection(bool bInPlayerA, FName InCardID);
 
 	/** 전략 카드 효과를 스탯에 적용 */
 	bool FinalizeStrategy();
 
 	/** 해당 플레이어의 Strategy 입력이 완료되었는지 확인 */
-	bool IsPlayerComplete(bool bPlayerA) const;
+	bool IsPlayerComplete(bool bInPlayerA) const;
 
 	/** 양쪽 플레이어 모두 Strategy 입력이 완료되었는지 확인 */
 	bool AreBothPlayersComplete() const;
@@ -55,15 +55,15 @@ public: // ########## public 함수 블록 ##########
 	bool AreBansComplete() const;
 
 	/** 해당 플레이어가 현재 선택할 수 있는 카드 목록을 반환 */
-	bool GetSelectableCards(bool bPlayerA, TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& OutCards) const;
+	bool GetSelectableCards(bool bInPlayerA, TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& OutCards) const;
 
 	/** 해당 플레이어가 선택한 전략 카드 ID 반환 */
-	FName GetSelectedCardID(bool bPlayerA) const;
+	FName GetSelectedCardID(bool bInPlayerA) const;
 
 private: // ########## private 함수 블록 ##########
 
 	/** 공개 카드 중 CardID와 일치하는 카드를 찾기 */
-	UJoustStrategyCardDataAsset* FindPublicCardByID(FName CardID) const;
+	UJoustStrategyCardDataAsset* FindPublicCardByID(FName InCardID) const;
 
 	/** RuleSet / RandomProvider는 유지한 채로 라운드 상태만 초기화 */
 	void ResetRoundState();

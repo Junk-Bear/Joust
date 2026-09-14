@@ -19,10 +19,10 @@ class JOUST_API UJoustPredictionInterpolation final : public UObject
 	
 public:
 	bool Interpolate(
-		const FJoustPredictionCircle& CurrentCircle,
-		const FJoustPredictionCircle& TargetCircle,
-		float ElapsedTime,
-		float StageDuration,
+		const FJoustPredictionCircle& InCurrentCircle,
+		const FJoustPredictionCircle& InTargetCircle,
+		float InElapsedTime,
+		float InStageDuration,
 		FJoustPredictionDisplayCircle& OutDisplayCircle,
 		float& OutAlpha) const;
 };

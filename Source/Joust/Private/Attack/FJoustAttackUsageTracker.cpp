@@ -5,38 +5,38 @@
 #include "Attack/JoustAttackTypeDataAsset.h"
 
 
-bool FJoustAttackUsageTracker::Initialize(const TMap<EJoustAttackType, TObjectPtr<UJoustAttackTypeDataAsset>>& AttackTypeSettings)
+bool FJoustAttackUsageTracker::Initialize(const TMap<EJoustAttackType, TObjectPtr<UJoustAttackTypeDataAsset>>& InAttackTypeSettings)
 {
     RemainingUses.Reset();
 
-    RemainingUses.Reserve(AttackTypeSettings.Num());
+    RemainingUses.Reserve(InAttackTypeSettings.Num());
 
-    if (AttackTypeSettings.IsEmpty())
+    if (InAttackTypeSettings.IsEmpty())
         return false;
 
-    for (const TPair<EJoustAttackType, TObjectPtr<UJoustAttackTypeDataAsset>>& PairItem : AttackTypeSettings)
+    for (const TPair<EJoustAttackType, TObjectPtr<UJoustAttackTypeDataAsset>>& Item : InAttackTypeSettings)
     {
-        const UJoustAttackTypeDataAsset* AttackTypeData = PairItem.Value.Get();
+        const UJoustAttackTypeDataAsset* AttackTypeDataPtr = Item.Value.Get();
 
-        if (AttackTypeData == nullptr)
+        if (!IsValid(AttackTypeDataPtr))
         {
             RemainingUses.Reset();
             return false;
         }
 
-        if (AttackTypeData->bHasUsageLimit)
+        if (AttackTypeDataPtr->bHasUsageLimit)
         {
-            if (AttackTypeData->MaxUsesPerMatch < 0)
+            if (AttackTypeDataPtr->MaxUsesPerMatch < 0)
             {
                 RemainingUses.Reset();
                 return false;
             }
 
-            RemainingUses.Add(PairItem.Key, AttackTypeData->MaxUsesPerMatch);
+            RemainingUses.Add(Item.Key, AttackTypeDataPtr->MaxUsesPerMatch);
         }
         else
         {
-            RemainingUses.Add(PairItem.Key, INDEX_NONE);
+            RemainingUses.Add(Item.Key, INDEX_NONE);
         }
     }
 
@@ -48,53 +48,53 @@ void FJoustAttackUsageTracker::Reset()
     RemainingUses.Reset();
 }
 
-bool FJoustAttackUsageTracker::CanUse(EJoustAttackType AttackType) const
+bool FJoustAttackUsageTracker::CanUse(EJoustAttackType InAttackType) const
 {
-    const int32* Remaining = RemainingUses.Find(AttackType);
+    const int32* RemainingUsesPtr = RemainingUses.Find(InAttackType);
 
-    if (Remaining == nullptr)
+    if (RemainingUsesPtr == nullptr)
         return false;
 
-    if (*Remaining == INDEX_NONE)
+    if (*RemainingUsesPtr == INDEX_NONE)
         return true;
 
-    return *Remaining > 0;
+    return *RemainingUsesPtr > 0;
 }
 
-bool FJoustAttackUsageTracker::ConsumeUse(EJoustAttackType AttackType)
+bool FJoustAttackUsageTracker::ConsumeUse(EJoustAttackType InAttackType)
 {
-    int32* Remaining = RemainingUses.Find(AttackType);
+    int32* RemainingUsesPtr = RemainingUses.Find(InAttackType);
 
-    if (Remaining == nullptr)
+    if (RemainingUsesPtr == nullptr)
         return false;
 
-    if (*Remaining == INDEX_NONE)
+    if (*RemainingUsesPtr == INDEX_NONE)
         return true;
 
-    if (*Remaining <= 0)
+    if (*RemainingUsesPtr <= 0)
         return false;
 
-    --(*Remaining);
+    --(*RemainingUsesPtr);
 
     return true;
 }
 
-bool FJoustAttackUsageTracker::IsUnlimited(EJoustAttackType AttackType) const
+bool FJoustAttackUsageTracker::IsUnlimited(EJoustAttackType InAttackType) const
 {
-    const int32* Remaining = RemainingUses.Find(AttackType);
+    const int32* RemainingUsesPtr = RemainingUses.Find(InAttackType);
 
-    if (Remaining == nullptr)
+    if (RemainingUsesPtr == nullptr)
         return false;
 
-    return (Remaining != nullptr) && (*Remaining == INDEX_NONE);
+    return (RemainingUsesPtr != nullptr) && (*RemainingUsesPtr == INDEX_NONE);
 }
 
-int32 FJoustAttackUsageTracker::GetRemainingUses(EJoustAttackType AttackType) const
+int32 FJoustAttackUsageTracker::GetRemainingUses(EJoustAttackType InAttackType) const
 {
-    const int32* Remaining = RemainingUses.Find(AttackType);
+    const int32* RemainingUsesPtr = RemainingUses.Find(InAttackType);
 
-    if (Remaining == nullptr)
+    if (RemainingUsesPtr == nullptr)
         return 0;
 
-    return *Remaining;
+    return *RemainingUsesPtr;
 }

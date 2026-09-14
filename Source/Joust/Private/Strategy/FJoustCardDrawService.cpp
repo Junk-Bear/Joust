@@ -6,43 +6,43 @@
 #include "Interface/JoustRandomProvider.h"
 
 bool FJoustCardDrawService::Draw(
-	const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& CardPool, 
-	int32 CardsToDraw, IJoustRandomProvider& RandomProvider, 
+	const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& InCardPool, 
+	int32 InCardsToDraw, IJoustRandomProvider& InRandomProvider, 
 	TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& OutCards)
 {
 	OutCards.Reset();
 
-	if (CardsToDraw <= 0)
+	if (InCardsToDraw <= 0)
 		return false;
 
 	TArray<TObjectPtr<UJoustStrategyCardDataAsset>> WorkingCards;
-	WorkingCards.Reserve(CardPool.Num());
+	WorkingCards.Reserve(InCardPool.Num());
 
 	TSet<FName> SeenCardIDs;
 
-	for (UJoustStrategyCardDataAsset* CardItem : CardPool)
+	for (UJoustStrategyCardDataAsset* Item : InCardPool)
 	{
-		if (CardItem == nullptr)
+		if (!IsValid(Item))
 			return false;
 
-		if (CardItem->CardID.IsNone())
+		if (Item->CardID.IsNone())
 			return false;
 
-		if (SeenCardIDs.Contains(CardItem->CardID))
+		if (SeenCardIDs.Contains(Item->CardID))
 			return false;
 
-		SeenCardIDs.Add(CardItem->CardID);
-		WorkingCards.Add(CardItem);
+		SeenCardIDs.Add(Item->CardID);
+		WorkingCards.Add(Item);
 	}
 
-	if (WorkingCards.Num() < CardsToDraw)
+	if (WorkingCards.Num() < InCardsToDraw)
 		return false;
 
-	OutCards.Reserve(CardsToDraw);
+	OutCards.Reserve(InCardsToDraw);
 
-	while (OutCards.Num() < CardsToDraw)
+	while (OutCards.Num() < InCardsToDraw)
 	{
-		const int32 RandomIdx = RandomProvider.GetRandom(0, WorkingCards.Num() - 1);
+		const int32 RandomIdx = InRandomProvider.GetRandom(0, WorkingCards.Num() - 1);
 
 		OutCards.Add(WorkingCards[RandomIdx]);
 		WorkingCards.RemoveAtSwap(RandomIdx);

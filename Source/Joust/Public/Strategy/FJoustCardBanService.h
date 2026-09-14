@@ -20,26 +20,26 @@ public: // ########## public 함수 블록 ##########
 	void EndRound();
 
 	/** 플레이어의 상대 카드 봉인단계 */
-	bool SubmitBan(bool bBanningPlayerA, FName CardID, 
-		const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& PublicCards
+	bool SubmitBan(bool bInBanningPlayerA, FName InCardID, 
+		const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& InPublicCards
 		);
 
 	/** 봉인권 사용 했는지 확인 */
-	bool HasPendingBan(bool bPlayerA) const;
+	bool HasPendingBan(bool bInPlayerA) const;
 
 	/** 양쪽 봉인권을 모두 사용했는지 확인 */
 	bool AreAllRequiredBanSumitted() const;
 
 	/** 카드가 봉인되었는지 확인 */
-	bool IsCardBannedForPlayer(bool bTargetPlayerA, FName CardID) const;
+	bool IsCardBannedForPlayer(bool bInTargetPlayerA, FName InCardID) const;
 
 	/** 봉인 적용된 카드 ID를 반환 */
-	FName GetBannedCardIDForPlayer(bool bTargetPlayerA) const;
+	FName GetBannedCardIDForPlayer(bool bInTargetPlayerA) const;
 
 private: // ########## private 함수 블록 ##########
 
 	/** 지정한 카드가 이번 공개 카드 목록에 있는지 확인 */
-	static bool ContainsCardID(const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& PublicCards, FName CardID);
+	static bool ContainsCardID(const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& InPublicCards, FName InCardID);
 
 private: // ########## private 변수 블록 ##########
 

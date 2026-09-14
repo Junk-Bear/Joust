@@ -12,11 +12,9 @@ class IJoustRandomProvider;
 class JOUST_API FJoustCriticalResolver final
 {
 public:
-
-	/** 결정타 계산 & 낙마 판정 */
 	static bool Resolve(
-		float BaseCriticalChance, float MaxCriticalChance,
-		float AttackTypeMultiplier, float DefenseMultiplier, float AttackerFinishing, float DefenderStability, 
-		IJoustRandomProvider& RandomProvider, float& OutFinalCriticalChance
+		float InBaseCriticalChance, float InMaxCriticalChance,
+		float InAttackTypeMultiplier, float InDefenseMultiplier, float InAttackerFinishing, float InDefenderStability, 
+		IJoustRandomProvider& InRandomProvider, float& OutFinalCriticalChance
 	);
 };

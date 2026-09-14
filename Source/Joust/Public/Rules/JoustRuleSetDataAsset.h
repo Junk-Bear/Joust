@@ -18,19 +18,11 @@ class JOUST_API UJoustRuleSetDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 	
-public:
-
-	// ====================
-	// Match
-	// ====================
+public: // ########## public 변수 블록 ##########
 
 	/** 기본 정규 라운드 수 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Match", meta = (ClampMin = "1"))
 	int32 BaseRoundCount = 5;
-
-	// ====================
-	// Phase
-	// ====================
 
 	/** Phase 1 기본 제한 시간 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Phase", meta = (ClampMin = "0.0"))
@@ -44,10 +36,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Phase", meta = (ClampMin = "0.0"))
 	float OnePlayerCompletedRemainingTime = 7.0f;
 
-	// ====================
-	// Strategy
-	// ====================
-
 	/** 전략 카드 풀 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Strategy")
 	TArray<TObjectPtr<UJoustStrategyCardDataAsset>> StrategyCardPool;
@@ -60,17 +48,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Strategy", meta = (ClampMin = "0"))
 	int32 MaxCardBansPerPlayer = 1;
 
-	// ====================
-	// Attack
-	// ====================
-
 	/** 찌르기 타입에 관한 것*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Attack")
 	TMap<EJoustAttackType, TObjectPtr<UJoustAttackTypeDataAsset>> AttackTypeSettings;
-
-	// ====================
-	// Lance Box
-	// ====================
 
 	/** 공격 지점으로 선택 가능한 최소 좌표 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|LanceBox")
@@ -79,10 +59,6 @@ public:
 	/** 공격 지점으로 선택 가능한 최대 좌표 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|LanceBox")
 	FVector2D LanceBoxMax = FVector2D(1.0f, 1.0f);
-
-	// ====================
-	// Guard
-	// ====================
 
 	/** 퍼펙트존 판정 반지름 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Guard", meta = (ClampMin = "0.0"))
@@ -96,10 +72,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Guard", meta = (ClampMin = "0.0"))
 	float BadZoneRadius = 0.50f;
 
-	// ====================
-	// Parry
-	// ====================
-
 	/** 퍼펙트존 패링 허용 시간 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Parry", meta = (ClampMin = "0.0"))
 	float PerfectZoneParryWindow = 0.12f;
@@ -112,10 +84,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Parry", meta = (ClampMin = "0.0"))
 	float BadZoneParryWindow = 0.06f;
 
-	// ====================
-	// Critical
-	// ====================
-
 	/** 기본 결정타 확률 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Critical", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float BaseCriticalChance = 0.03f;
@@ -123,10 +91,6 @@ public:
 	/** 기본 결정타 확률 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Critical", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float MaxCriticalChance = 0.10f;
-
-	// ====================
-	// 가드시 결정타 배율
-	// ====================
 
 	/** 퍼펙트존 가드시 결정타 배율 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Critical|Guard", meta = (ClampMin = "0.0"))
@@ -144,10 +108,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Critical|Guard", meta = (ClampMin = "0.0"))
 	float GuardOutsideCriticalMultiplier = 1.5f;
 
-	// ====================
-	// 패링 실패시 결정타 배율
-	// ====================
-
 	/** 퍼펙트존에서 패링 실패시 결정타 배율 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Critical|ParryFailure", meta = (ClampMin = "0.0"))
 	float ParryFailurePerfectCriticalMultiplier = 0.5f;
@@ -160,11 +120,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Critical|ParryFailure", meta = (ClampMin = "0.0"))
 	float ParryFailureBadCriticalMultiplier = 1.5f;
 
-
-	// ====================
-	// Prediction
-	// ====================
-
 	/** 기본 최초 예측원 반지름 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Prediction", meta = (ClampMin = "0.0"))
 	float DefaultInitialPredictionRadius = 0.8f;
@@ -173,12 +128,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Prediction", meta = (ClampMin = "0.0"))
 	float MinFakeAttackPointDistance = 0.4f;
 
-	/**
-	* 유효한 Prediction Circle 생성에 실패 했을 때 Generator가 재시도할 최대 횟 수
-	* 
-	* 나중에 로그 확인용
-	* 최대 횟수 이상 걸리면 버그 터질까봐 안전장치용
-	*/
+	/** 유효한 Prediction Circle 생성에 실패 했을 때 Generator가 재시도할 최대 횟 수 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Rules|Prediction", meta = (ClampMin = "1"))
 	int32 MaxPredictionAttempts = 128;
 };

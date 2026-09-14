@@ -41,7 +41,7 @@ float UJoustPhaseCoordinator::GetRemainingTime() const
 
 	const UWorld* WorldPtr = World.Get();
 
-	if (WorldPtr == nullptr)
+	if (!IsValid(WorldPtr))
 		return 0.0f;
 
 	return FMath::Max(0.0f, PhaseEndTime - WorldPtr->GetTimeSeconds());
@@ -57,7 +57,7 @@ bool UJoustPhaseCoordinator::StartTimedPhase(EJoustPhase InPhase, float InDurati
 	UWorld* WorldPtr = World.Get();
 
 	//월드가 이미 없어진 상태면 타이머 사용 불가
-	if (WorldPtr == nullptr)
+	if (!IsValid(WorldPtr))
 		return false;
 
 	//기존 TimePhase가 실행 중이면 새로 덮지 않게 
@@ -133,7 +133,7 @@ void UJoustPhaseCoordinator::BeginDestroy()
 {
 	UWorld* WorldPtr = World.Get();
 
-	if (WorldPtr != nullptr)
+	if (IsValid(WorldPtr))
 	{
 		WorldPtr->GetTimerManager().ClearTimer(PhaseEndTimerHandle);
 	}
@@ -176,7 +176,7 @@ void UJoustPhaseCoordinator::TryShortenTime()
 
 	UWorld* WorldPtr = World.Get();
 
-	if (WorldPtr == nullptr)
+	if (!IsValid(WorldPtr))
 		return;
 
 	const float RemainingTime = GetRemainingTime();
@@ -200,7 +200,7 @@ void UJoustPhaseCoordinator::FinishTimedPhase()
 
 	UWorld* WorldPtr = World.Get();
 
-	if (WorldPtr != nullptr)
+	if (IsValid(WorldPtr))
 	{
 		// 조기 종료 였을 경우 남아있는 Timer제거
 		WorldPtr->GetTimerManager().ClearTimer(PhaseEndTimerHandle);

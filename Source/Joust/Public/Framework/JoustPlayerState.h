@@ -27,10 +27,10 @@ public: // ########## public 함수 블록 ##########
 	void ResetMatchState();
 
 	/** AttackType의 현재 남은 사용 횟수 Snapshot 설정 */
-	void SetRemainingAttackUses(EJoustAttackType AttackType, int32 RemainingUses);
+	void SetRemainingAttackUses(EJoustAttackType InAttackType, int32 InRemainingUses);
 
 	/** AttackType의 현재 남은 사용 횟수 반환 */
-	int32 GetRemainingAttackUses(EJoustAttackType AttackType) const;
+	int32 GetRemainingAttackUses(EJoustAttackType InAttackType) const;
 
 	/** Resolve가 완료된 공격 기록 추가 */
 	void AddAttackHistory(const FJoustAttackHistory& InAttackHistory);

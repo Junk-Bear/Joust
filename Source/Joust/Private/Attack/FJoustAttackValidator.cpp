@@ -6,31 +6,31 @@
 #include "Attack/JoustAttackTypeDataAsset.h"
 #include "Rules/JoustRuleSetDataAsset.h"
 
-bool FJoustAttackValidator::Validate(const UJoustRuleSetDataAsset& RuleSet, const FJoustAttackUsageTracker& UsageTracker, const FVector2D& AttackPoint, EJoustAttackType AttackType)
+bool FJoustAttackValidator::Validate(const UJoustRuleSetDataAsset& InRuleSet, const FJoustAttackUsageTracker& InUsageTracker, const FVector2D& InAttackPoint, EJoustAttackType InAttackType)
 {
-	if (!FMath::IsFinite(AttackPoint.X) || !FMath::IsFinite(AttackPoint.Y))
+	if (!FMath::IsFinite(InAttackPoint.X) || !FMath::IsFinite(InAttackPoint.Y))
 		return false;
 
-	if ((RuleSet.LanceBoxMin.X > RuleSet.LanceBoxMax.X) || (RuleSet.LanceBoxMin.Y > RuleSet.LanceBoxMax.Y))
+	if ((InRuleSet.LanceBoxMin.X > InRuleSet.LanceBoxMax.X) || (InRuleSet.LanceBoxMin.Y > InRuleSet.LanceBoxMax.Y))
 		return false;
 
-	if (AttackPoint.X < RuleSet.LanceBoxMin.X ||
-		AttackPoint.X > RuleSet.LanceBoxMax.X ||
-		AttackPoint.Y < RuleSet.LanceBoxMin.Y ||
-		AttackPoint.Y > RuleSet.LanceBoxMax.Y)
+	if (InAttackPoint.X < InRuleSet.LanceBoxMin.X ||
+		InAttackPoint.X > InRuleSet.LanceBoxMax.X ||
+		InAttackPoint.Y < InRuleSet.LanceBoxMin.Y ||
+		InAttackPoint.Y > InRuleSet.LanceBoxMax.Y)
 		return false;
 
-	const TObjectPtr<UJoustAttackTypeDataAsset>* AttackTypeDataPtr = RuleSet.AttackTypeSettings.Find(AttackType);
+	const TObjectPtr<UJoustAttackTypeDataAsset>* AttackTypeSettingPtr = InRuleSet.AttackTypeSettings.Find(InAttackType);
 
-	if (AttackTypeDataPtr == nullptr)
+	if (AttackTypeSettingPtr == nullptr)
 		return false;
 
-	const UJoustAttackTypeDataAsset* AttackTypeData = AttackTypeDataPtr->Get();
+	const UJoustAttackTypeDataAsset* AttackTypeDataPtr = AttackTypeSettingPtr->Get();
 
-	if (AttackTypeData == nullptr)
+	if (!IsValid(AttackTypeDataPtr))
 		return false;
 
-	if (!UsageTracker.CanUse(AttackType))
+	if (!InUsageTracker.CanUse(InAttackType))
 		return false;
 
 	return true;

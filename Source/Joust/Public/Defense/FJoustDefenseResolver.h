@@ -16,11 +16,10 @@ class UJoustRuleSetDataAsset;
 class JOUST_API FJoustDefenseResolver final
 {
 public:
-	/** DefenseResult를 만들고 반환함 */
 	static FJoustDefenseResult Resolve(
-		const FJoustAttackData& AttackData,
-		const FJoustDefenseData& DefenseData,
-		float impactTime,
-		const UJoustRuleSetDataAsset& RuleSet
+		const FJoustAttackData& InAttackData,
+		const FJoustDefenseData& InDefenseData,
+		float InImpactTime,
+		const UJoustRuleSetDataAsset& InRuleSet
 	);
 };

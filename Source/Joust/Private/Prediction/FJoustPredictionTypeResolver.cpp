@@ -5,7 +5,7 @@
 #include "Attack/JoustAttackTypeDataAsset.h"
 #include "Rules/JoustRuleSetDataAsset.h"
 
-const UJoustAttackTypeDataAsset* FJoustPredictionTypeResolver::Resolve(const UJoustRuleSetDataAsset& RuleSet, EJoustAttackType AttackType)
+const UJoustAttackTypeDataAsset* FJoustPredictionTypeResolver::Resolve(const UJoustRuleSetDataAsset& InRuleSet, EJoustAttackType InAttackType)
 {
-	return RuleSet.AttackTypeSettings.FindRef(AttackType).Get();
+	return InRuleSet.AttackTypeSettings.FindRef(InAttackType).Get();
 }

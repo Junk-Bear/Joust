@@ -15,6 +15,6 @@ class JOUST_API FJoustPredictionTypeResolver final
 {
 public:
 	static const UJoustAttackTypeDataAsset* Resolve(
-		const UJoustRuleSetDataAsset& RuleSet,
-		EJoustAttackType AttackType);
+		const UJoustRuleSetDataAsset& InRuleSet,
+		EJoustAttackType InAttackType);
 };

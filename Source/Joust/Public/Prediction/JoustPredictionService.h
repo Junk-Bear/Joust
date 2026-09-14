@@ -20,15 +20,16 @@ class JOUST_API UJoustPredictionService : public UObject
 	GENERATED_BODY()
 	
 public: // ########## public 함수 블록 ##########
+
 	/** 룰셋 / 랜덤프로바이더 설정 */
 	void Initialize(UJoustRuleSetDataAsset* InRuleSet, IJoustRandomProvider* InRandomProvider);
 
 	/** 현재 공격의 세팅 / 예측원축소도 / 가짜 예측원 축소도를 생성 */
 	bool PreparePrediction(
-		EJoustAttackType AttackType, const FVector2D& AttackPoint,
-		int32 PredictionSeed,
-		float AttackerDeception, float AttackerQuickness,
-		float DefenderReading);
+		EJoustAttackType InAttackType, const FVector2D& InAttackPoint,
+		int32 InPredictionSeed,
+		float InAttackerDeception, float InAttackerQuickness,
+		float InDefenderReading);
 
 	/** 종료시 데이터 초기화 */
 	void EndRound();

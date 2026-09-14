@@ -28,12 +28,12 @@ void FJoustCardBanService::EndRound()
 	BToABannedCard = NAME_None;
 }
 
-bool FJoustCardBanService::SubmitBan(bool bBanningPlayerA, FName CardID, const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>&PublicCards)
+bool FJoustCardBanService::SubmitBan(bool bInBanningPlayerA, FName InCardID, const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>&InPublicCards)
 {
-	if (CardID.IsNone())
+	if (InCardID.IsNone())
 		return false;
 
-	if (bBanningPlayerA)
+	if (bInBanningPlayerA)
 	{
 		if (!bPlayerAHasBanRight || bPlayerABanSumitted)
 			return false;
@@ -44,26 +44,26 @@ bool FJoustCardBanService::SubmitBan(bool bBanningPlayerA, FName CardID, const T
 			return false;
 	}
 
-	if (!ContainsCardID(PublicCards, CardID))
+	if (!ContainsCardID(InPublicCards, InCardID))
 		return false;
 
-	if (bBanningPlayerA)
+	if (bInBanningPlayerA)
 	{
-		AToBBannedCard = CardID;
+		AToBBannedCard = InCardID;
 		bPlayerABanSumitted = true;
 	}
 	else
 	{
-		BToABannedCard = CardID;
+		BToABannedCard = InCardID;
 		bPlayerBBanSumitted = true;
 	}
 
 	return true;
 }
 
-bool FJoustCardBanService::HasPendingBan(bool bPlayerA) const
+bool FJoustCardBanService::HasPendingBan(bool bInPlayerA) const
 {
-	if (bPlayerA)
+	if (bInPlayerA)
 	{
 		return bPlayerAHasBanRight && !bPlayerABanSumitted;
 	}
@@ -82,24 +82,24 @@ bool FJoustCardBanService::AreAllRequiredBanSumitted() const
 	return bPlayerACompleted && bPlayerBCompleted;
 }
 
-bool FJoustCardBanService::IsCardBannedForPlayer(bool bTargetPlayerA, FName CardID) const
+bool FJoustCardBanService::IsCardBannedForPlayer(bool bInTargetPlayerA, FName InCardID) const
 {
-	if (CardID.IsNone())
+	if (InCardID.IsNone())
 		return false;
 
-	if (bTargetPlayerA)
+	if (bInTargetPlayerA)
 	{
-		return bPlayerBBanSumitted && BToABannedCard == CardID;
+		return bPlayerBBanSumitted && BToABannedCard == InCardID;
 	}
 	else
 	{
-		return bPlayerABanSumitted && AToBBannedCard == CardID;
+		return bPlayerABanSumitted && AToBBannedCard == InCardID;
 	}
 }
 
-FName FJoustCardBanService::GetBannedCardIDForPlayer(bool bTargetPlayerA) const
+FName FJoustCardBanService::GetBannedCardIDForPlayer(bool bInTargetPlayerA) const
 {
-	if (bTargetPlayerA)
+	if (bInTargetPlayerA)
 	{
 		return bPlayerBBanSumitted ? BToABannedCard : NAME_None;
 	}
@@ -110,11 +110,11 @@ FName FJoustCardBanService::GetBannedCardIDForPlayer(bool bTargetPlayerA) const
 
 }
 
-bool FJoustCardBanService::ContainsCardID(const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& PublicCards, FName CardID)
+bool FJoustCardBanService::ContainsCardID(const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& InPublicCards, FName InCardID)
 {
-	for (const UJoustStrategyCardDataAsset* CardItem : PublicCards)
+	for (const UJoustStrategyCardDataAsset* Item : InPublicCards)
 	{
-		if (CardItem != nullptr && CardItem->CardID == CardID)
+		if (IsValid(Item) && Item->CardID == InCardID)
 		{
 			return true;
 		}

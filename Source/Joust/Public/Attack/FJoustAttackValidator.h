@@ -15,9 +15,9 @@ class JOUST_API FJoustAttackValidator
 {
 public:
 	static bool Validate(
-		const UJoustRuleSetDataAsset& RuleSet,
-		const FJoustAttackUsageTracker& UsageTracker,
-		const FVector2D& AttackPoint,
-		EJoustAttackType AttackType
+		const UJoustRuleSetDataAsset& InRuleSet,
+		const FJoustAttackUsageTracker& InUsageTracker,
+		const FVector2D& InAttackPoint,
+		EJoustAttackType InAttackType
 	);
 };

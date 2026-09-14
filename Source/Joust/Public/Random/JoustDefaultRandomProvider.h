@@ -16,18 +16,18 @@ class JOUST_API UJoustDefaultRandomProvider final : public UObject, public IJous
 {
 	GENERATED_BODY()
 	
-public:
+public:  // ######### public 함수 블록 #########
 	/** 지정한 시드로 랜덤 스트림을 초기화 */
 	void Initialize(int32 InSeed);
 
 	// ====================
 	// IJoustRandomProvider 상속됨
 	// ====================
-	int32 GetRandom(int32 Min, int32 Max) override;
-	float GetRandom(float Min, float Max) override;
-	FVector2D GetRandom(FVector2D& Min, FVector2D& Max) override;
+	int32 GetRandom(int32 InMin, int32 InMax) override;
+	float GetRandom(float InMin, float InMax) override;
+	FVector2D GetRandom(FVector2D& InMin, FVector2D& InMax) override;
 
-private:
+private: // ########## private 함수 블록 ##########
 	/** 실제 랜덤 값을 생성하는 Seed 기반 스트림 */
 	FRandomStream RandomStream;
 };

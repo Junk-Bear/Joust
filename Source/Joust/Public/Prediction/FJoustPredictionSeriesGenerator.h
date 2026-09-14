@@ -16,12 +16,12 @@ class JOUST_API FJoustPredictionSeriesGenerator final
 {
 public:
 	static bool Generate(
-		const FJoustPredictionSettings& Settings,
-		const FVector2D& TargetPoint,
-		int32 PredictionSeed,
-		const FVector2D& LanceBoxMin,
-		const FVector2D& LanceBoxMax,
-		int32 MaxRetries,
-		IJoustRandomProvider& RandomProvider,
+		const FJoustPredictionSettings& InSettings,
+		const FVector2D& InTargetPoint,
+		int32 InPredictionSeed,
+		const FVector2D& InLanceBoxMin,
+		const FVector2D& InLanceBoxMax,
+		int32 InMaxRetries,
+		IJoustRandomProvider& InRandomProvider,
 		FJoustPredictionSeries& OutSeries);
 };

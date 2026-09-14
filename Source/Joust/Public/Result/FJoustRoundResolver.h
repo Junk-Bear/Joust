@@ -18,9 +18,9 @@ class JOUST_API FJoustRoundResolver final
 {
 public:
 	static FJoustRoundResult Resolve(
-		int32 RoundNumber,
-		const FJoustAttackData& PlayerAAttackData, const FJoustDefenseData& PlayerBDefenseData,	float PlayerAToBImpactTime,
-		const FJoustAttackData& PlayerBAttackData, const FJoustDefenseData& PlayerADefenseData,	float PlayerBToAImpactTime,
-		const UJoustRuleSetDataAsset& RuleSet, IJoustRandomProvider& RandomProvider
+		int32 InRoundNumber,
+		const FJoustAttackData& InPlayerAAttackData, const FJoustDefenseData& InPlayerBDefenseData,	float InPlayerAToBImpactTime,
+		const FJoustAttackData& InPlayerBAttackData, const FJoustDefenseData& InPlayerADefenseData,	float InPlayerBToAImpactTime,
+		const UJoustRuleSetDataAsset& InRuleSet, IJoustRandomProvider& InRandomProvider
 	);
 };

@@ -4,7 +4,7 @@
 #include "Result/FJoustScoreResolver.h"
 #include "Defense/JoustDefenseTypes.h"
 
-int32 FJoustScoreResolver::Resolve(const FJoustDefenseResult& DefenseResult)
+int32 FJoustScoreResolver::Resolve(const FJoustDefenseResult& InDefenseResult)
 {
-	return DefenseResult.bBlockedScore ? 0 : 1;
+	return InDefenseResult.bBlockedScore ? 0 : 1;
 }

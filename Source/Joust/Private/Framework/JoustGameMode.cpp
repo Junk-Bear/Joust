@@ -32,16 +32,21 @@ bool AJoustGameMode::AreParticipantsReady() const
 	return PlayerAController.IsValid() && PlayerBController.IsValid();
 }
 
-bool AJoustGameMode::StartJoustMatch()
+bool AJoustGameMode::StartJoustMatch(AController* InRequestingController)
 {
-	if (!bMatchCoreReady || MatchCoordinator == nullptr || !PlayerAController.IsValid() || MatchCoordinator->IsMatchActive())
+	if (!bMatchCoreReady || 
+		!IsValid(MatchCoordinator) || 
+		!PlayerAController.IsValid() || 
+		MatchCoordinator->IsMatchActive() ||
+		!IsValid(InRequestingController) ||
+		InRequestingController != PlayerAController.Get())
 		return false;
-	
+
 	const bool bPlayerBWasEmpty = !PlayerBController.IsValid();
 
 	if (!PrepareMatchParticipants())
 		return false;
-	
+
 	if (!MatchCoordinator->StartMatch())
 	{
 		if (bPlayerBWasEmpty)
@@ -60,6 +65,56 @@ bool AJoustGameMode::StartJoustMatch()
 	return true;
 }
 
+bool AJoustGameMode::SubmitPlayerStrategySelection(AJoustPlayerController* InRequestingController, FName InCardID)
+{
+	if (!bMatchCoreReady || InCardID.IsNone() || !IsValid(RoundCoordinator) || !IsValid(MatchCoordinator) || !MatchCoordinator->IsMatchActive())
+		return false;
+
+	const bool bPlayerA = InRequestingController == PlayerAController.Get();
+
+	if (!bPlayerA && InRequestingController != PlayerBController.Get())
+		return false;
+
+	InRequestingController->SetSelectedStrategyCardID(InCardID);
+
+	if (!RoundCoordinator->SubmitStrategySelection(bPlayerA, *InRequestingController))
+	{
+		InRequestingController->SetSelectedStrategyCardID(NAME_None);
+
+		return false;
+	}
+
+	return true;
+}
+
+bool AJoustGameMode::SubmitPlayerStrategyBan(AJoustPlayerController* InRequestingController, FName InCardID)
+{
+	if (
+		!bMatchCoreReady ||
+		!IsValid(InRequestingController) ||
+		InCardID.IsNone() ||
+		!IsValid(RoundCoordinator) ||
+		!IsValid(MatchCoordinator) ||
+		!MatchCoordinator->IsMatchActive())
+		return false;
+
+	const bool bPlayerA = InRequestingController == PlayerAController.Get();
+	const bool bPlayerB = InRequestingController == PlayerBController.Get();
+
+	if (!bPlayerA && !bPlayerB)
+		return false;
+
+	InRequestingController->SetBannedStrategyCardID(InCardID);
+
+	if (RoundCoordinator->SubmitStrategyBan(bPlayerA, *InRequestingController))
+		return true;
+
+	InRequestingController->SetBannedStrategyCardID(NAME_None);
+
+	return false;
+	
+}
+
 void AJoustGameMode::InitGameState()
 {
 	Super::InitGameState();
@@ -67,45 +122,45 @@ void AJoustGameMode::InitGameState()
 	bMatchCoreReady = InitializeMatchCore();
 }
 
-void AJoustGameMode::PostLogin(APlayerController* NewPlayer)
+void AJoustGameMode::PostLogin(APlayerController* InNewPlayer)
 {
-	Super::PostLogin(NewPlayer);
+	Super::PostLogin(InNewPlayer);
 
-	if (!bMatchCoreReady || NewPlayer == nullptr)
+	if (!bMatchCoreReady || !IsValid(InNewPlayer))
 		return;
 
-	AJoustPlayerController* JoustPlayerController = Cast<AJoustPlayerController>(NewPlayer);
+	AJoustPlayerController* JoustPlayerControllerPtr = Cast<AJoustPlayerController>(InNewPlayer);
 
-	if (JoustPlayerController == nullptr)
+	if (!IsValid(JoustPlayerControllerPtr))
 		return;
 
-	if (MatchCoordinator != nullptr && MatchCoordinator->IsMatchActive())
+	if (IsValid(MatchCoordinator) && MatchCoordinator->IsMatchActive())
 	{
-		JoustPlayerController->StartSpectatingOnly();
+		JoustPlayerControllerPtr->StartSpectatingOnly();
 
 		return;
 	}
 
 	if (!PlayerAController.IsValid())
 	{
-		PlayerAController = JoustPlayerController;
+		PlayerAController = JoustPlayerControllerPtr;
 
 		return;
 	}
 
 	if (!PlayerBController.IsValid())
 	{
-		PlayerBController = JoustPlayerController;
+		PlayerBController = JoustPlayerControllerPtr;
 
 		return;
 	}
 
-	JoustPlayerController->StartSpectatingOnly();
+	JoustPlayerControllerPtr->StartSpectatingOnly();
 }
 
 bool AJoustGameMode::InitializeMatchCore()
 {
-	if (RuleSet == nullptr || GetWorld() == nullptr)
+	if (!IsValid(RuleSet) || !IsValid(GetWorld()))
 		return false;
 
 	RandomProvider = NewObject<UJoustDefaultRandomProvider>(this);
@@ -116,13 +171,15 @@ bool AJoustGameMode::InitializeMatchCore()
 
 	MatchCoordinator = NewObject<UJoustMatchCoordinator>(this);
 
-	AJoustGameState* JoustGameState = GetGameState<AJoustGameState>();
+	AJoustGameState* JoustGameStatePtr = GetGameState<AJoustGameState>();
 
-	if (JoustGameState == nullptr)
+	if (!IsValid(JoustGameStatePtr))
 		return false;
 
-	if (RandomProvider == nullptr || PhaseCoordinator == nullptr || RoundCoordinator == nullptr || MatchCoordinator == nullptr)
+	if (!IsValid(RandomProvider) || !IsValid(PhaseCoordinator) || !IsValid(RoundCoordinator) || !IsValid(MatchCoordinator))
 		return false;
+
+	JoustGameStatePtr->SetRuleSet(RuleSet.Get());
 
 	RandomProvider->Initialize(InitialRandomSeed);
 
@@ -136,53 +193,58 @@ bool AJoustGameMode::InitializeMatchCore()
 
 	MatchCoordinator->Initialize(RoundCoordinator, PhaseCoordinator, RuleSet.Get());
 
-	RoundCoordinator->SetGameState(JoustGameState);
+	RoundCoordinator->SetGameState(JoustGameStatePtr);
 
-	MatchCoordinator->SetGameState(JoustGameState);
+	MatchCoordinator->SetGameState(JoustGameStatePtr);
 
 	return true;
 }
 
 bool AJoustGameMode::PrepareMatchParticipants()
 {
-	if (!bMatchCoreReady || RoundCoordinator == nullptr || GetWorld() == nullptr)
+	if (!bMatchCoreReady || !IsValid(RoundCoordinator) || !IsValid(GetWorld()))
+		return false;
+
+	AJoustGameState* GameStatePtr = GetGameState<AJoustGameState>();
+
+	if (!IsValid(GameStatePtr))
 		return false;
 
 	AController* PlayerAControllerPtr = PlayerAController.Get();
 
-	if (PlayerAControllerPtr == nullptr)
+	if (!IsValid(PlayerAControllerPtr))
 		return false;
 
 	AController* PlayerBControllerPtr = PlayerBController.Get();
 
-	AJoustAIController* SpawnedAIController = nullptr;
+	AJoustAIController* SpawnedAIControllerPtr = nullptr;
 
-	if (PlayerBControllerPtr == nullptr)
+	if (!IsValid(PlayerBControllerPtr))
 	{
 		FActorSpawnParameters SpawnParameters;
 
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-		SpawnedAIController = GetWorld()->SpawnActor<AJoustAIController>(
+		SpawnedAIControllerPtr = GetWorld()->SpawnActor<AJoustAIController>(
 			AJoustAIController::StaticClass(),
 			FVector::ZeroVector,
 			FRotator::ZeroRotator,
 			SpawnParameters);
 
-		if (SpawnedAIController == nullptr)
+		if (!IsValid(SpawnedAIControllerPtr))
 			return false;
 		
-		PlayerBControllerPtr = SpawnedAIController;
+		PlayerBControllerPtr = SpawnedAIControllerPtr;
 	}
 
-	AJoustPlayerState* PlayerAState = PlayerAControllerPtr->GetPlayerState<AJoustPlayerState>();
-	AJoustPlayerState* PlayerBState = PlayerBControllerPtr->GetPlayerState<AJoustPlayerState>();
+	AJoustPlayerState* PlayerAStatePtr = PlayerAControllerPtr->GetPlayerState<AJoustPlayerState>();
+	AJoustPlayerState* PlayerBStatePtr = PlayerBControllerPtr->GetPlayerState<AJoustPlayerState>();
 
-	if (PlayerAState == nullptr || PlayerBState == nullptr || PlayerAState == PlayerBState)
+	if (!IsValid(PlayerAStatePtr) || !IsValid(PlayerBStatePtr) || PlayerAStatePtr == PlayerBStatePtr)
 	{
-		if (SpawnedAIController != nullptr)
+		if (IsValid(SpawnedAIControllerPtr))
 		{
-			SpawnedAIController->Destroy();
+			SpawnedAIControllerPtr->Destroy();
 		}
 
 		return false;
@@ -190,43 +252,45 @@ bool AJoustGameMode::PrepareMatchParticipants()
 
 	if (!RoundCoordinator->ResetMatchState())
 	{
-		if (SpawnedAIController != nullptr)
+		if (IsValid(SpawnedAIControllerPtr))
 		{
-			SpawnedAIController->Destroy();
+			SpawnedAIControllerPtr->Destroy();
 		}
 
 		return false;
 	}
 
-	PlayerAState->InitializeStats(PlayerABaseStats);
-	PlayerBState->InitializeStats(PlayerBBaseStats);
+	PlayerAStatePtr->InitializeStats(PlayerABaseStats);
+	PlayerBStatePtr->InitializeStats(PlayerBBaseStats);
 
-	PlayerAState->ResetMatchState();
-	PlayerBState->ResetMatchState();
+	PlayerAStatePtr->ResetMatchState();
+	PlayerBStatePtr->ResetMatchState();
 
 	if (!ResetParticipantInput(PlayerAControllerPtr) || !ResetParticipantInput(PlayerBControllerPtr))
 	{
-		if (SpawnedAIController != nullptr)
+		if (IsValid(SpawnedAIControllerPtr))
 		{
-			SpawnedAIController->Destroy();
+			SpawnedAIControllerPtr->Destroy();
 		}
 
 		return false;
 	}
 
-	if (!RoundCoordinator->SetPlayerStates(PlayerAState, PlayerBState))
+	if (!RoundCoordinator->SetPlayerStates(PlayerAStatePtr, PlayerBStatePtr))
 	{
-		if (SpawnedAIController != nullptr)
+		if (IsValid(SpawnedAIControllerPtr))
 		{
-			SpawnedAIController->Destroy();
+			SpawnedAIControllerPtr->Destroy();
 		}
 
 		return false;
 	}
 
-	if (SpawnedAIController != nullptr)
+	GameStatePtr->SetParticipantStates(PlayerAStatePtr, PlayerBStatePtr);
+
+	if (IsValid(SpawnedAIControllerPtr))
 	{
-		PlayerBController = SpawnedAIController;
+		PlayerBController = SpawnedAIControllerPtr;
 	}
 
 	return true;
@@ -235,20 +299,20 @@ bool AJoustGameMode::PrepareMatchParticipants()
 bool AJoustGameMode::ResetParticipantInput(AController* InController)
 {
 
-	if (AJoustPlayerController* PlayerController = Cast<AJoustPlayerController>(InController))
+	if (AJoustPlayerController* PlayerControllerPtr = Cast<AJoustPlayerController>(InController))
 	{
-		PlayerController->ResetStrategyInput();
-		PlayerController->ResetAttackInput();
-		PlayerController->ResetDefenseInput();
+		PlayerControllerPtr->ResetStrategyInput();
+		PlayerControllerPtr->ResetAttackInput();
+		PlayerControllerPtr->ResetDefenseInput();
 
 		return true;
 	}
 
-	if (AJoustAIController* AIController = Cast<AJoustAIController>(InController))
+	if (AJoustAIController* AIControllerPtr = Cast<AJoustAIController>(InController))
 	{
-		AIController->ResetStrategyInput();
-		AIController->ResetAttackInput();
-		AIController->ResetDefenseInput();
+		AIControllerPtr->ResetStrategyInput();
+		AIControllerPtr->ResetAttackInput();
+		AIControllerPtr->ResetDefenseInput();
 
 		return true;
 	}
@@ -258,23 +322,23 @@ bool AJoustGameMode::ResetParticipantInput(AController* InController)
 
 void AJoustGameMode::HandleRoundPhaseStarted(EJoustPhase InPhase)
 {
-	if (RoundCoordinator == nullptr)
+	if (!IsValid(RoundCoordinator))
 		return;
 
-	if (AJoustAIController* PlayerAAI = Cast<AJoustAIController>(PlayerAController.Get()))
+	if (AJoustAIController* PlayerAAIControllerPtr = Cast<AJoustAIController>(PlayerAController.Get()))
 	{
 		switch (InPhase)
 		{
 		case EJoustPhase::Strategy:
-			SubmitAIStrategy(true, *PlayerAAI);
+			SubmitAIStrategy(true, *PlayerAAIControllerPtr);
 			break;
 
 		case EJoustPhase::Attack:
-			SubmitAIAttack(true, *PlayerAAI);
+			SubmitAIAttack(true, *PlayerAAIControllerPtr);
 			break;
 
 		case EJoustPhase::Defense:
-			SubmitAIDefense(true, *PlayerAAI);
+			SubmitAIDefense(true, *PlayerAAIControllerPtr);
 			break;
 
 		default:
@@ -282,20 +346,20 @@ void AJoustGameMode::HandleRoundPhaseStarted(EJoustPhase InPhase)
 		}
 	}
 
-	if (AJoustAIController* PlayerBAI = Cast<AJoustAIController>(PlayerBController.Get()))
+	if (AJoustAIController* PlayerBAIControllerPtr = Cast<AJoustAIController>(PlayerBController.Get()))
 	{
 		switch (InPhase)
 		{
 		case EJoustPhase::Strategy:
-			SubmitAIStrategy(false, *PlayerBAI);
+			SubmitAIStrategy(false, *PlayerBAIControllerPtr);
 			break;
 
 		case EJoustPhase::Attack:
-			SubmitAIAttack(false, *PlayerBAI);
+			SubmitAIAttack(false, *PlayerBAIControllerPtr);
 			break;
 
 		case EJoustPhase::Defense:
-			SubmitAIDefense(false, *PlayerBAI);
+			SubmitAIDefense(false, *PlayerBAIControllerPtr);
 			break;
 
 		default:
@@ -306,94 +370,94 @@ void AJoustGameMode::HandleRoundPhaseStarted(EJoustPhase InPhase)
 
 void AJoustGameMode::HandleStrategyBansCompleted()
 {
-	if (AJoustAIController* PlayerAAI = Cast<AJoustAIController>(PlayerAController.Get()))
+	if (AJoustAIController* PlayerAAIControllerPtr = Cast<AJoustAIController>(PlayerAController.Get()))
 	{
-		SubmitAIStrategySelection(true, *PlayerAAI);
+		SubmitAIStrategySelection(true, *PlayerAAIControllerPtr);
 	}
 
-	if (AJoustAIController* PlayerBAI = Cast<AJoustAIController>(PlayerBController.Get()))
+	if (AJoustAIController* PlayerBAIControllerPtr = Cast<AJoustAIController>(PlayerBController.Get()))
 	{
-		SubmitAIStrategySelection(false, *PlayerBAI);
+		SubmitAIStrategySelection(false, *PlayerBAIControllerPtr);
 	}
 }
 
-bool AJoustGameMode::SubmitAIStrategy(bool bPlayerA, AJoustAIController & AIController)
+bool AJoustGameMode::SubmitAIStrategy(bool bInPlayerA, AJoustAIController & InOutAIController)
 {
-	if (RoundCoordinator == nullptr || RandomProvider == nullptr)
+	if (!IsValid(RoundCoordinator) || !IsValid(RandomProvider))
 		return false;
 	
-	AJoustGameState* JoustGameState = GetGameState<AJoustGameState>();
+	AJoustGameState* JoustGameStatePtr = GetGameState<AJoustGameState>();
 
-	if (JoustGameState == nullptr)
+	if (!IsValid(JoustGameStatePtr))
 		return false;
 
-	AIController.ResetStrategyInput();
+	InOutAIController.ResetStrategyInput();
 
-	const TArray<FName>& PublicCards = JoustGameState->GetPublicStrategyCardIDs();
+	const TArray<FName>& PublicCardsRef = JoustGameStatePtr->GetPublicStrategyCardIDs();
 
-	if (PublicCards.IsEmpty())
+	if (PublicCardsRef.IsEmpty())
 		return false;
 
-	AIController.SetBannedStrategyCardID(PublicCards[RandomProvider->GetRandom(0,PublicCards.Num() - 1)]);
+	InOutAIController.SetBannedStrategyCardID(PublicCardsRef[RandomProvider->GetRandom(0,PublicCardsRef.Num() - 1)]);
 
-	if (RoundCoordinator->SubmitStrategyBan(bPlayerA, AIController))
+	if (RoundCoordinator->SubmitStrategyBan(bInPlayerA, InOutAIController))
 		return true;
 	
-	return SubmitAIStrategySelection(bPlayerA, AIController);
+	return SubmitAIStrategySelection(bInPlayerA, InOutAIController);
 }
 
-bool AJoustGameMode::SubmitAIStrategySelection(bool bPlayerA, AJoustAIController& AIController)
+bool AJoustGameMode::SubmitAIStrategySelection(bool bInPlayerA, AJoustAIController& InOutAIController)
 {
-	if (RoundCoordinator == nullptr || RandomProvider == nullptr)
+	if (!IsValid(RoundCoordinator) || !IsValid(RandomProvider))
 		return false;
 	
-	AJoustGameState* JoustGameState = GetGameState<AJoustGameState>();
+	AJoustGameState* JoustGameStatePtr = GetGameState<AJoustGameState>();
 
-	if (JoustGameState == nullptr)
+	if (!IsValid(JoustGameStatePtr))
 		return false;
 
-	const FName BannedCardID = bPlayerA ? JoustGameState->GetBannedCardIDForPlayerA() : JoustGameState->GetBannedCardIDForPlayerB();
+	const FName BannedCardID = bInPlayerA ? JoustGameStatePtr->GetBannedCardIDForPlayerA() : JoustGameStatePtr->GetBannedCardIDForPlayerB();
 
 	TArray<FName> SelectableCards;
 
-	for (FName CardID : JoustGameState->GetPublicStrategyCardIDs())
+	for (FName Item : JoustGameStatePtr->GetPublicStrategyCardIDs())
 	{
-		if (!CardID.IsNone() && CardID != BannedCardID)
+		if (!Item.IsNone() && Item != BannedCardID)
 		{
-			SelectableCards.Add(CardID);
+			SelectableCards.Add(Item);
 		}
 	}
 
 	if (SelectableCards.IsEmpty())
 		return false;
 
-	AIController.SetSelectedStrategyCardID(SelectableCards[RandomProvider->GetRandom(0,SelectableCards.Num() - 1)]);
+	InOutAIController.SetSelectedStrategyCardID(SelectableCards[RandomProvider->GetRandom(0,SelectableCards.Num() - 1)]);
 
-	return RoundCoordinator->SubmitStrategySelection(bPlayerA, AIController);
+	return RoundCoordinator->SubmitStrategySelection(bInPlayerA, InOutAIController);
 }
 
-bool AJoustGameMode::SubmitAIAttack(bool bPlayerA, AJoustAIController& AIController)
+bool AJoustGameMode::SubmitAIAttack(bool bInPlayerA, AJoustAIController& InOutAIController)
 {
-	if (RoundCoordinator == nullptr || RuleSet == nullptr || RandomProvider == nullptr)
+	if (!IsValid(RoundCoordinator) || !IsValid(RuleSet) || !IsValid(RandomProvider))
 		return false;
 	
-	AJoustPlayerState* PlayerState = AIController.GetPlayerState<AJoustPlayerState>();
+	AJoustPlayerState* PlayerStatePtr = InOutAIController.GetPlayerState<AJoustPlayerState>();
 
-	if (PlayerState == nullptr)
+	if (!IsValid(PlayerStatePtr))
 		return false;
 
 	TArray<EJoustAttackType> AvailableAttackTypes;
 
-	for (const TPair<EJoustAttackType, TObjectPtr<UJoustAttackTypeDataAsset>>& PairItem : RuleSet->AttackTypeSettings)
+	for (const TPair<EJoustAttackType, TObjectPtr<UJoustAttackTypeDataAsset>>& Item : RuleSet->AttackTypeSettings)
 	{
-		if (PairItem.Value == nullptr)
+		if (!IsValid(Item.Value))
 			continue;
 
-		const int32 RemainingUses = PlayerState->GetRemainingAttackUses(PairItem.Key);
+		const int32 RemainingUses = PlayerStatePtr->GetRemainingAttackUses(Item.Key);
 
 		if (RemainingUses == INDEX_NONE || RemainingUses > 0)
 		{
-			AvailableAttackTypes.Add(PairItem.Key);
+			AvailableAttackTypes.Add(Item.Key);
 		}
 	}
 
@@ -404,34 +468,34 @@ bool AJoustGameMode::SubmitAIAttack(bool bPlayerA, AJoustAIController& AIControl
 
 	FVector2D LanceBoxMax = RuleSet->LanceBoxMax;
 
-	AIController.ResetAttackInput();
+	InOutAIController.ResetAttackInput();
 
-	AIController.SetAttackType(AvailableAttackTypes[RandomProvider->GetRandom(0, AvailableAttackTypes.Num() - 1)]);
+	InOutAIController.SetAttackType(AvailableAttackTypes[RandomProvider->GetRandom(0, AvailableAttackTypes.Num() - 1)]);
 
-	AIController.SetAttackPoint(RandomProvider->GetRandom( LanceBoxMin, LanceBoxMax));
+	InOutAIController.SetAttackPoint(RandomProvider->GetRandom( LanceBoxMin, LanceBoxMax));
 
-	AIController.ConfirmAttack();
+	InOutAIController.ConfirmAttack();
 
-	return RoundCoordinator->SubmitAttack(bPlayerA, AIController);
+	return RoundCoordinator->SubmitAttack(bInPlayerA, InOutAIController);
 }
 
-bool AJoustGameMode::SubmitAIDefense(bool bPlayerA, AJoustAIController& AIController)
+bool AJoustGameMode::SubmitAIDefense(bool bInPlayerA, AJoustAIController& InOutAIController)
 {
-	if (RoundCoordinator == nullptr || RandomProvider == nullptr)
+	if (!IsValid(RoundCoordinator) || !IsValid(RandomProvider))
 	{
 		return false;
 	}
 
 	FJoustPredictionState PredictionState;
 
-	if (!RoundCoordinator->GetDefensePredictionState(bPlayerA, PredictionState))
+	if (!RoundCoordinator->GetDefensePredictionState(bInPlayerA, PredictionState))
 		return false;
 	
 	const int32 CircleIdx = RandomProvider->GetRandom(0, PredictionState.DisplayCircles.Num() - 1);
 
-	AIController.ResetDefenseInput();
+	InOutAIController.ResetDefenseInput();
 
-	AIController.SetShieldPoint(PredictionState.DisplayCircles[CircleIdx].Center);
+	InOutAIController.SetShieldPoint(PredictionState.DisplayCircles[CircleIdx].Center);
 
-	return RoundCoordinator->SubmitDefense(bPlayerA, AIController);
+	return RoundCoordinator->SubmitDefense(bInPlayerA, InOutAIController);
 }

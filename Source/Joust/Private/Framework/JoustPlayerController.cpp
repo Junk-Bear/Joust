@@ -2,6 +2,20 @@
 
 
 #include "Framework/JoustPlayerController.h"
+#include "Engine/World.h"
+#include "Framework/JoustGameMode.h"
+
+void AJoustPlayerController::RequestStartMatch()
+{
+	if (HasAuthority())
+	{
+		HandleStartMatchRequest();
+
+		return;
+	}
+
+	ServerRequestStartMatch();
+}
 
 void AJoustPlayerController::SetSelectedStrategyCardID(FName InCardID)
 {
@@ -50,6 +64,36 @@ bool AJoustPlayerController::TryGetBannedStrategyCardID(FName& OutCardID) const
 	OutCardID = BannedStrategyCardID;
 
 	return true;
+}
+
+void AJoustPlayerController::RequestStrategySelection(FName InCardID)
+{
+	if (!IsLocalController() || InCardID.IsNone())
+		return;
+
+	if (HasAuthority())
+	{
+		HandleStrategySelectionRequest(InCardID);
+
+		return;
+	}
+
+	ServerRequestStrategySelection(InCardID);
+}
+
+void AJoustPlayerController::RequestStrategyBan(FName InCardID)
+{
+	if (!IsLocalController() || InCardID.IsNone())
+		return;
+
+	if (HasAuthority())
+	{
+		HandleStrategyBanRequest(InCardID);
+
+		return;
+	}
+
+	ServerRequestStrategyBan(InCardID);
 }
 
 void AJoustPlayerController::SetAttackPoint(const FVector2D& InAttackPoint)
@@ -125,4 +169,72 @@ bool AJoustPlayerController::IsParryAttempted() const
 float AJoustPlayerController::GetParryInputTime() const
 {
 	return ParryInputTime;
+}
+
+void AJoustPlayerController::ServerRequestStrategyBan_Implementation(FName InCardID)
+{
+	HandleStrategyBanRequest(InCardID);
+}
+
+void AJoustPlayerController::HandleStrategySelectionRequest(FName InCardID)
+{
+	if (!HasAuthority() || InCardID.IsNone())
+		return;
+
+	UWorld* WorldPtr = GetWorld();
+
+	if (!IsValid(WorldPtr))
+		return;
+
+	AJoustGameMode* GameModePtr = WorldPtr->GetAuthGameMode<AJoustGameMode>();
+
+	if (!IsValid(GameModePtr))
+		return;
+
+	GameModePtr->SubmitPlayerStrategySelection(this, InCardID);
+}
+
+void AJoustPlayerController::ServerRequestStrategySelection_Implementation(FName InCardID)
+{
+	HandleStrategySelectionRequest(InCardID);
+}
+
+void AJoustPlayerController::HandleStrategyBanRequest(FName InCardID)
+{
+	if (!HasAuthority() || InCardID.IsNone())
+		return;
+
+	UWorld* WorldPtr = GetWorld();
+
+	if (!IsValid(WorldPtr))
+		return;
+
+	AJoustGameMode* GameModePtr = WorldPtr->GetAuthGameMode<AJoustGameMode>();
+
+	if (!IsValid(GameModePtr))
+		return;
+
+	GameModePtr->SubmitPlayerStrategyBan(
+		this,
+		InCardID);
+}
+
+void AJoustPlayerController::HandleStartMatchRequest()
+{
+	UWorld* WorldPtr = GetWorld();
+
+	if (!IsValid(WorldPtr))
+		return;
+
+	AJoustGameMode* GameModePtr = WorldPtr->GetAuthGameMode<AJoustGameMode>();
+
+	if (!IsValid(GameModePtr))
+		return;
+
+	GameModePtr->StartJoustMatch(this);
+}
+
+void AJoustPlayerController::ServerRequestStartMatch_Implementation()
+{
+	HandleStartMatchRequest();
 }

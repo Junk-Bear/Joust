@@ -22,11 +22,11 @@ class JOUST_API IJoustRandomProvider
 
 public:
 	/** Min~Max 범위의 랜덤 정수를 반환 */
-	virtual int32 GetRandom(int32 Min, int32 Max) = 0;
+	virtual int32 GetRandom(int32 InMin, int32 InMax) = 0;
 
 	/** Min~Max 범위의 랜덤 실수를 반환 */
-	virtual float GetRandom(float Min, float Max) = 0;
+	virtual float GetRandom(float InMin, float InMax) = 0;
 
 	/** Min~Max 범위의 랜덤 실수를 반환 */
-	virtual FVector2D GetRandom(FVector2D& Min, FVector2D& Max) = 0;
+	virtual FVector2D GetRandom(FVector2D& InMin, FVector2D& InMax) = 0;
 };

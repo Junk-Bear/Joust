@@ -21,10 +21,12 @@ class JOUST_API UJoustPhaseCoordinator : public UObject
 	GENERATED_BODY()
 	
 public: // ########## 델리게이트 블록 ##########
+
 	/** 페이즈가 종료되었음을 알리는 이벤트 */
 	DECLARE_EVENT_OneParam(UJoustPhaseCoordinator, FOnPhaseEnded, EJoustPhase);
 
 public: // ########## public 함수 블록 ##########
+
 	/**
 	* PhaseCoordinator 초기화 
 	* 
@@ -94,7 +96,7 @@ private : // ########## private 변수 블록 ##########
 	/** 페이즈가 아직 진행중인지 */
 	bool bPhaseActive = false;
 
-	/** 실제 페이즈종료 이벤트 인스턴스 */
+	/** FOnPhaseEnded 이벤트용*/
 	FOnPhaseEnded PhaseEndedEvent;
 
 public: // ########## GET SET 블록 ##########

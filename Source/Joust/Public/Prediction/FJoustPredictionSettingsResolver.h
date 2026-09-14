@@ -18,21 +18,21 @@ public: // ########## public 함수 블록 ##########
 
 	/** 이번 공격의 최종 Prediction 설정을 계산 */
 	static bool Resolve(
-		const UJoustRuleSetDataAsset& RuleSet,
-		const UJoustAttackTypeDataAsset& AttackTypeData,
-		float AttackerDeception, float AttackerQuickness,
-		float DefenderReading,
+		const UJoustRuleSetDataAsset& InRuleSet,
+		const UJoustAttackTypeDataAsset& InAttackTypeData,
+		float InAttackerDeception, float InAttackerQuickness,
+		float InDefenderReading,
 		FJoustPredictionSettings& OutSettings
 	);
 
 private: // ########## private 함수 블록 ##########
 
 	/** 스탯에 따른 InitialRadius에 적용 배율 계산 */
-	static float ResolveRadiusModifier(float AttackerDeception, float DefenderReading);
+	static float ResolveRadiusModifier(float InAttackerDeception, float InDefenderReading);
 
 	/** 스탯에 따른 Duration 적용 배율 계산 */
-	static float ResolveDurationModifier(float AttackerQuickness);
+	static float ResolveDurationModifier(float InAttackerQuickness);
 
 	/** 입력 설정 데이터의 불변식 검사 */
-	static bool ValidateStageRadiusRatios(const TArray<float>& StageRadiusRatios);
+	static bool ValidateStageRadiusRatios(const TArray<float>& InStageRadiusRatios);
 };

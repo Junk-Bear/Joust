@@ -15,12 +15,9 @@ struct FJoustMatchResult;
 class JOUST_API FJoustMatchResultResolver final
 {
 public:
-	/**
-	* MatchResult를 만들고 반환함.
-	*/
 	static FJoustMatchResult Resolve(
-		int32 CurrentRoundNumber, int32 BaseRoundCount, 
-		int32 PlayerAFinalScore, int32 PlayerBFinalScore,
-		bool bPlayerAUnhorsed, bool bPlayerBUnhorsed
+		int32 InCurrentRoundNumber, int32 InBaseRoundCount, 
+		int32 InPlayerAFinalScore, int32 InPlayerBFinalScore,
+		bool bInPlayerAUnhorsed, bool bInPlayerBUnhorsed
 	);
 };

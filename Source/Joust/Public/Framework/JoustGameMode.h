@@ -36,8 +36,14 @@ public: // ########## public 함수 블록 ##########
 	/** 양쪽 컨트롤러가 유효한지 확인 */
 	bool AreParticipantsReady() const;
 
-	/** 현재 참가자 구성으로 새로운 게임을 시작 */
-	bool StartJoustMatch();
+	/** Player A의 요청으로 새 경기 시작 */
+	bool StartJoustMatch(AController* InRequestingController);
+
+	/** Player의 전략 카드 선택을 서버에서 검증하고 제출 */
+	bool SubmitPlayerStrategySelection(AJoustPlayerController* InRequestingController, FName InCardID);
+
+	/** 플레이어의 Strategy 카드 봉인 요청을 서버에서 검증하고 제출 */
+	bool SubmitPlayerStrategyBan(AJoustPlayerController* InRequestingController, FName InCardID);
 
 protected: // ########## protected 함수 블록 ##########
 
@@ -45,7 +51,7 @@ protected: // ########## protected 함수 블록 ##########
 	virtual void InitGameState() override;
 
 	/** Player 접속 후 경기 참가자 연결, A / B 슬롯에 배정됨 */
-	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void PostLogin(APlayerController* InNewPlayer) override;
 
 private: // ########## private 함수 블록 ##########
 
@@ -70,16 +76,16 @@ private: // ########## private 함수 블록 ##########
 	void HandleStrategyBansCompleted();
 
 	/** 해당 슬롯의 기본 AI Strategy 입력 제출 */
-	bool SubmitAIStrategy(bool bPlayerA, AJoustAIController& AIController);
+	bool SubmitAIStrategy(bool bInPlayerA, AJoustAIController& InOutAIController);
 
 	/** Ban 완료 후 AI Strategy 카드 선택 제출 */
-	bool SubmitAIStrategySelection(bool bPlayerA, AJoustAIController& AIController);
+	bool SubmitAIStrategySelection(bool bInPlayerA, AJoustAIController& InOutAIController);
 
 	/** 해당 슬롯의 기본 AI Attack 입력 제출 */
-	bool SubmitAIAttack(bool bPlayerA, AJoustAIController& AIController);
+	bool SubmitAIAttack(bool bInPlayerA, AJoustAIController& InOutAIController);
 
 	/** 해당 슬롯의 기본 AI Defense 입력 제출 */
-	bool SubmitAIDefense(bool bPlayerA, AJoustAIController& AIController);
+	bool SubmitAIDefense(bool bInPlayerA, AJoustAIController& InOutAIController);
 
 private: // ########## private 변수 블록 ##########
 

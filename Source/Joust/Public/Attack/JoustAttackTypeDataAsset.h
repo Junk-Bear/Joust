@@ -17,10 +17,10 @@ class JOUST_API UJoustAttackTypeDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 
-public: // 생성자용
+public: // ########## 생성자 블록 ##########
 	UJoustAttackTypeDataAsset();
 
-public:
+public: // ########## public 변수 블록 ##########
 
 	/** UI 표시 이름 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Attack")

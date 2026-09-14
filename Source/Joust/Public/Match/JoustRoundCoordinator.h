@@ -120,16 +120,16 @@ public: // ########## public 함수 블록 ##########
 	bool ArePredictionsPrepared() const;
 
 	/** Strategy Phase에서 해당 플레이어의 카드 봉인 입력을 제출 */
-	bool SubmitStrategyBan(bool bPlayerA, const IJoustStrategyInput& StrategyInput);
+	bool SubmitStrategyBan(bool bInPlayerA, const IJoustStrategyInput& InStrategyInput);
 
 	/** Strategy Phase에서 해당 플레이어의 전략 카드 선택을 제출 */
-	bool SubmitStrategySelection(bool bPlayerA, const IJoustStrategyInput& StrategyInput);
+	bool SubmitStrategySelection(bool bInPlayerA, const IJoustStrategyInput& InStrategyInput);
 
 	/** Attack Phase에서 해당 플레이어의 확정 공격 입력을 제출 */
-	bool SubmitAttack(bool bPlayerA, const IJoustAttackInput& AttackInput);
+	bool SubmitAttack(bool bInPlayerA, const IJoustAttackInput& InAttackInput);
 
 	/** Defense Phase에서 해당 플레이어의 방어 입력을 제출 */
-	bool SubmitDefense(bool bPlayerA, const IJoustDefenseInput& DefenseInput);
+	bool SubmitDefense(bool bInPlayerA, const IJoustDefenseInput& InDefenseInput);
 
 	/** 실제 Player A / B PlayerState를 연결하고 현재 Attack Usage를 동기화 */
 	bool SetPlayerStates(AJoustPlayerState* InPlayerAState, AJoustPlayerState* InPlayerBState);
@@ -138,7 +138,13 @@ public: // ########## public 함수 블록 ##########
 	bool ResetMatchState();
 
 	/** 해당 방어자가 현재 볼 수 있는 공개 Prediction 상태 반환 */
-	bool GetDefensePredictionState(bool bPlayerA, FJoustPredictionState& OutState) const;
+	bool GetDefensePredictionState(bool bInPlayerA, FJoustPredictionState& OutState) const;
+
+	/** 상위 MatchCoordinator 설정 */
+	void SetMatchCoordinator(UJoustMatchCoordinator* InMatchCoordinator);
+
+	/** GameState 설정*/
+	void SetGameState(AJoustGameState* InGameState);
 
 protected: // ########## protected 함수 블록 ##########
 
@@ -155,7 +161,7 @@ private: // ########## private 함수 블록 ##########
 	);
 
 	/** PhaseCoordinator의 이벤트 수신용(페이즈종료) */
-	void HandlePhaseEnded(EJoustPhase EndedPhase);
+	void HandlePhaseEnded(EJoustPhase InEndedPhase);
 
 	/** 새 라운드를 하기전 이전 라운드 초기화 */
 	void ResetRoundData();
@@ -173,7 +179,7 @@ private: // ########## private 함수 블록 ##########
 	bool StartPredictionPlayback();
 
 	/** 확정된 RoundResult를 양쪽 PlayerState에 반영 */
-	void ApplyRoundResultToPlayerStates(AJoustPlayerState& PlayerAStateRef, AJoustPlayerState& PlayerBStateRef, int32 PlayerAScore, int32 PlayerBScore);
+	void ApplyRoundResultToPlayerStates(AJoustPlayerState& InOutPlayerAState, AJoustPlayerState& InOutPlayerBState, int32 InPlayerAScore, int32 InPlayerBScore);
 	
 	/** 현재 Phase 상태를 GameState에 동기화 */
 	void SyncPhasePublicState();
@@ -257,10 +263,10 @@ private: // ########## private 변수 블록 ##########
 	/** 공개 경기 상태 */
 	TWeakObjectPtr<AJoustGameState> GameState;
 
-	/** Phase 시작 이벤트용 */
+	/** FOnPhaseStarted 이벤트용 */
 	FOnPhaseStarted PhaseStartedEvent;
 
-	/** Strategy Ban 완료 이벤트용 */
+	/** FOnStrategyBansCompleted 이벤트용 */
 	FOnStrategyBansCompleted StrategyBansCompletedEvent;
 
 
@@ -284,15 +290,11 @@ public: // ########## GET SET 블록 ##########
 
 	FORCEINLINE const FJoustRoundResult& GetCurrentRoundResult() const { return CurrentRoundResult; }
 
-	FORCEINLINE void SetMatchCoordinator(UJoustMatchCoordinator* InMatchCoordinator) { MatchCoordinator = InMatchCoordinator; }
-
 	FORCEINLINE FOnRoundResult& OnRoundResult() { return RoundResultEvent; }
 
 	FORCEINLINE FOnPredictionPlaybackCompleted& OnPredictionPlaybackCompleted() { return PredictionPlaybackCompletedEvent; }
 
 	FORCEINLINE bool IsPredictionPlaybackCompleted() const { return bPredictionPlaybackCompleted; }
-
-	FORCEINLINE void SetGameState(AJoustGameState* InGameState) { GameState = InGameState; }
 
 	FORCEINLINE FOnPhaseStarted& OnPhaseStarted() { return PhaseStartedEvent; }
 

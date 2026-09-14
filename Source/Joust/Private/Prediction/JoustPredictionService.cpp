@@ -19,27 +19,27 @@ void UJoustPredictionService::Initialize(UJoustRuleSetDataAsset* InRuleSet, IJou
 }
 
 bool UJoustPredictionService::PreparePrediction(
-	EJoustAttackType AttackType, const FVector2D & AttackPoint, 
-	int32 PredictionSeed, 
-	float AttackerDeception, float AttackerQuickness, 
-	float DefenderReading)
+	EJoustAttackType InAttackType, const FVector2D & InAttackPoint, 
+	int32 InPredictionSeed, 
+	float InAttackerDeception, float InAttackerQuickness, 
+	float InDefenderReading)
 {
 	ResetPredictionData();
 
-	if (!RuleSet || !RandomProvider)
+	if (!IsValid(RuleSet) || !RandomProvider)
 		return false;
 
-	const UJoustAttackTypeDataAsset* AttackTypeData = FJoustPredictionTypeResolver::Resolve(*RuleSet, AttackType);
+	const UJoustAttackTypeDataAsset* AttackTypeDataPtr = FJoustPredictionTypeResolver::Resolve(*RuleSet, InAttackType);
 
-	if (!AttackTypeData)
+	if (!IsValid(AttackTypeDataPtr))
 		return false;
 
 	FJoustPredictionSettings CandidateSettings;
 
 	if (!FJoustPredictionSettingsResolver::Resolve(
-		*RuleSet, *AttackTypeData,
-		AttackerDeception, AttackerQuickness,
-		DefenderReading,
+		*RuleSet, *AttackTypeDataPtr,
+		InAttackerDeception, InAttackerQuickness,
+		InDefenderReading,
 		CandidateSettings))
 		return false;
 		
@@ -47,8 +47,8 @@ bool UJoustPredictionService::PreparePrediction(
 
 	if (!FJoustPredictionSeriesGenerator::Generate(
 		CandidateSettings,
-		AttackPoint,
-		PredictionSeed,
+		InAttackPoint,
+		InPredictionSeed,
 		RuleSet->LanceBoxMin,
 		RuleSet->LanceBoxMax,
 		RuleSet->MaxPredictionAttempts,
@@ -60,8 +60,8 @@ bool UJoustPredictionService::PreparePrediction(
 
 	if (!FJoustFakePredictionGenerator::Generate(
 		CandidateSettings,
-		AttackPoint,
-		PredictionSeed,
+		InAttackPoint,
+		InPredictionSeed,
 		RuleSet->LanceBoxMin,
 		RuleSet->LanceBoxMax,
 		RuleSet->MaxPredictionAttempts,

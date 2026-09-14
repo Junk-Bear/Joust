@@ -10,28 +10,25 @@ void AJoustHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AJoustPlayerController* JoustPlayerController = Cast<AJoustPlayerController>(GetOwningPlayerController());
+	AJoustPlayerController* JoustPlayerControllerPtr = Cast<AJoustPlayerController>(GetOwningPlayerController());
 
-	if (JoustPlayerController == nullptr || !JoustPlayerController->IsLocalController())
+	if (!IsValid(JoustPlayerControllerPtr) || !JoustPlayerControllerPtr->IsLocalController() || !RootWidgetClass)
 		return;
 	
+	RootWidget = CreateWidget<UJoustHUDWidget>(JoustPlayerControllerPtr, RootWidgetClass);
+
+	if (!IsValid(RootWidget))
+		return;
+
 	PresentationController = NewObject<UJoustPresentationController>(this);
 
-	if (PresentationController == nullptr)
-		return;
-	
-	if (!PresentationController->Initialize(JoustPlayerController, this))
+	if (!IsValid(PresentationController) || !PresentationController->Initialize(JoustPlayerControllerPtr, this, RootWidget))
 	{
 		PresentationController = nullptr;
-	}
-	
-	if (!RootWidgetClass)
-		return;
-	
-	RootWidget = CreateWidget<UJoustHUDWidget>(GetOwningPlayerController(), RootWidgetClass);
+		RootWidget = nullptr;
 
-	if (IsValid(RootWidget))
-	{
-		RootWidget->AddToPlayerScreen();
+		return;
 	}
+
+	RootWidget->AddToPlayerScreen();
 }

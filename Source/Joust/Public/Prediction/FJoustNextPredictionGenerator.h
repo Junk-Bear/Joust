@@ -14,11 +14,11 @@ class JOUST_API FJoustNextPredictionGenerator final
 {
 public:
 	static bool Generate(
-		const FJoustPredictionCircle& CurrentCircle,
-		float NextRadius,
-		const FVector2D& TargetPoint,
-		const FVector2D& LanceBoxMin, const FVector2D& LanceBoxMax,
-		int32 MaxRetries,
-		IJoustRandomProvider& RandomProvider,
+		const FJoustPredictionCircle& InCurrentCircle,
+		float InNextRadius,
+		const FVector2D& InTargetPoint,
+		const FVector2D& InLanceBoxMin, const FVector2D& InLanceBoxMax,
+		int32 InMaxRetries,
+		IJoustRandomProvider& InRandomProvider,
 		FJoustPredictionCircle& OutCircle);
 };

@@ -12,6 +12,5 @@ struct FJoustDefenseResult;
 class JOUST_API FJoustScoreResolver final
 {
 public:
-	/** 점수를 반환 */
-	static int32 Resolve(const FJoustDefenseResult& DefenseResult);
+	static int32 Resolve(const FJoustDefenseResult& InDefenseResult);
 };

@@ -19,7 +19,7 @@ class JOUST_API UJoustStrategyCardDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 	
-public:
+public: // ########## public 변수 블록 ##########
 	/** 카드 내부 식별자 ID */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Joust|Strategy")
 	FName CardID = NAME_None;

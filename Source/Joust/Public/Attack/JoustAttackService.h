@@ -35,22 +35,22 @@ public: // ########## public 함수 블록 ##########
 	void EndRound();
 
 	/** 플레이어의 공격을 검증하고 최종 AttackData로 확정 */
-	bool SubmitAttack(bool bPlayerA, const FJoustAttackData& InAttackData);
+	bool SubmitAttack(bool bInPlayerA, const FJoustAttackData& InAttackData);
 
 	/** 해당 플레이어가 이번 라운드 공격 제출 완료했는지 확인 */
-	bool IsPlayerComplete(bool bPlayerA) const;
+	bool IsPlayerComplete(bool bInPlayerA) const;
 
 	/** 양쪽 모두 이번 라운드 공격 제출을 완료했는지 확인 */
 	bool AreBothPlayersComplete() const;
 
 	/** 해당 플레이어가 특정 공격타입을 아직 사용할 수 있는지 확인 */
-	bool CanPlayerUseAttackType(bool bPlayerA, EJoustAttackType AttackType) const;
+	bool CanPlayerUseAttackType(bool bInPlayerA, EJoustAttackType InAttackType) const;
 
 	/** 공격 타입의 남은 횟수 반환(무제한 : INDEX_NONE) */
-	int32 GetRemainingUses(bool bPlayerA, EJoustAttackType AttackType) const;
+	int32 GetRemainingUses(bool bInPlayerA, EJoustAttackType InAttackType) const;
 
 	/** 해당 플레이어의 전체 AttackType 남은 사용 횟수 Snapshot 반환 */
-	bool GetUsageSnapshot(bool bPlayerA, TMap<EJoustAttackType, int32>& OutRemainingUses) const;
+	bool GetUsageSnapshot(bool bInPlayerA, TMap<EJoustAttackType, int32>& OutRemainingUses) const;
 
 private: // ########## private 함수 블록 ##########
 	/** RuleSet과 RandomProvider, Usage 빼고 남은 상태만 초기화 */

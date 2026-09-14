@@ -13,7 +13,5 @@ enum class EJoustParryOutcome : uint8;
 class JOUST_API FJoustEdgeParryResolver final
 {
 public:
-	/** BadZone에서 패링이 성공했는 판정함 */
-
-	static bool Resolve(EJoustGuardZone GuardZone, EJoustParryOutcome ParryOutcome);
+	static bool Resolve(EJoustGuardZone InGuardZone, EJoustParryOutcome InParryOutcome);
 };

@@ -6,67 +6,67 @@
 #include "Prediction/JoustPredictionTypes.h"
 #include "Prediction/FJoustPredictionValidator.h"
 
-bool FJoustNextPredictionGenerator::Generate(const FJoustPredictionCircle& CurrentCircle, float NextRadius, const FVector2D& TargetPoint, const FVector2D& LanceBoxMin, const FVector2D& LanceBoxMax, int32 MaxRetries, IJoustRandomProvider& RandomProvider, FJoustPredictionCircle& OutCircle)
+bool FJoustNextPredictionGenerator::Generate(const FJoustPredictionCircle& InCurrentCircle, float InNextRadius, const FVector2D& InTargetPoint, const FVector2D& InLanceBoxMin, const FVector2D& InLanceBoxMax, int32 InMaxRetries, IJoustRandomProvider& InRandomProvider, FJoustPredictionCircle& OutCircle)
 {
 	OutCircle = FJoustPredictionCircle{};
 
-	if (!FMath::IsFinite(CurrentCircle.Center.X) || !FMath::IsFinite(CurrentCircle.Center.Y) ||
-		!FMath::IsFinite(CurrentCircle.Radius) || !FMath::IsFinite(NextRadius) ||
-		!FMath::IsFinite(TargetPoint.X) || !FMath::IsFinite(TargetPoint.Y) ||
-		!FMath::IsFinite(LanceBoxMin.X) || !FMath::IsFinite(LanceBoxMin.Y) ||
-		!FMath::IsFinite(LanceBoxMax.X) || !FMath::IsFinite(LanceBoxMax.Y) ||
-		CurrentCircle.Radius <= 0.0f || NextRadius < 0.0f || NextRadius >= CurrentCircle.Radius)
+	if (!FMath::IsFinite(InCurrentCircle.Center.X) || !FMath::IsFinite(InCurrentCircle.Center.Y) ||
+		!FMath::IsFinite(InCurrentCircle.Radius) || !FMath::IsFinite(InNextRadius) ||
+		!FMath::IsFinite(InTargetPoint.X) || !FMath::IsFinite(InTargetPoint.Y) ||
+		!FMath::IsFinite(InLanceBoxMin.X) || !FMath::IsFinite(InLanceBoxMin.Y) ||
+		!FMath::IsFinite(InLanceBoxMax.X) || !FMath::IsFinite(InLanceBoxMax.Y) ||
+		InCurrentCircle.Radius <= 0.0f || InNextRadius < 0.0f || InNextRadius >= InCurrentCircle.Radius)
 		return false;
 
-	if (LanceBoxMin.X > LanceBoxMax.X ||
-		LanceBoxMin.Y > LanceBoxMax.Y)
+	if (InLanceBoxMin.X > InLanceBoxMax.X ||
+		InLanceBoxMin.Y > InLanceBoxMax.Y)
 		return false;
 
-	if (TargetPoint.X < LanceBoxMin.X || TargetPoint.X > LanceBoxMax.X ||
-		TargetPoint.Y < LanceBoxMin.Y || TargetPoint.Y > LanceBoxMax.Y)
+	if (InTargetPoint.X < InLanceBoxMin.X || InTargetPoint.X > InLanceBoxMax.X ||
+		InTargetPoint.Y < InLanceBoxMin.Y || InTargetPoint.Y > InLanceBoxMax.Y)
 		return false;
 
-	if (NextRadius == 0.0f)
+	if (InNextRadius == 0.0f)
 	{
 		FJoustPredictionCircle Candidate;
 
-		Candidate.Center = TargetPoint;
+		Candidate.Center = InTargetPoint;
 		Candidate.Radius = 0.0f;
 
-		if (!FJoustPredictionValidator::ValidateNext(CurrentCircle, Candidate, TargetPoint, LanceBoxMin, LanceBoxMax))
+		if (!FJoustPredictionValidator::ValidateNext(InCurrentCircle, Candidate, InTargetPoint, InLanceBoxMin, InLanceBoxMax))
 			return false;
 
 		OutCircle = Candidate;
 		return true;
 	}
 
-	if (MaxRetries <= 0)
+	if (InMaxRetries <= 0)
 		return false;
 
-	const float CurrentContainmentRadius = CurrentCircle.Radius - NextRadius;
+	const float CurrentContainmentRadius = InCurrentCircle.Radius - InNextRadius;
 
 	FVector2D ValidCenterMin(
-		FMath::Max3(LanceBoxMin.X, TargetPoint.X - NextRadius, CurrentCircle.Center.X - CurrentContainmentRadius),
-		FMath::Max3(LanceBoxMin.Y, TargetPoint.Y - NextRadius, CurrentCircle.Center.Y - CurrentContainmentRadius)
+		FMath::Max3(InLanceBoxMin.X, InTargetPoint.X - InNextRadius, InCurrentCircle.Center.X - CurrentContainmentRadius),
+		FMath::Max3(InLanceBoxMin.Y, InTargetPoint.Y - InNextRadius, InCurrentCircle.Center.Y - CurrentContainmentRadius)
 	);
 
 	FVector2D ValidCenterMax(
-		FMath::Min3(LanceBoxMax.X, TargetPoint.X + NextRadius, CurrentCircle.Center.X + CurrentContainmentRadius),
-		FMath::Min3(LanceBoxMax.Y, TargetPoint.Y + NextRadius, CurrentCircle.Center.Y + CurrentContainmentRadius)
+		FMath::Min3(InLanceBoxMax.X, InTargetPoint.X + InNextRadius, InCurrentCircle.Center.X + CurrentContainmentRadius),
+		FMath::Min3(InLanceBoxMax.Y, InTargetPoint.Y + InNextRadius, InCurrentCircle.Center.Y + CurrentContainmentRadius)
 	);
 
 	if (ValidCenterMin.X > ValidCenterMax.X || ValidCenterMin.Y > ValidCenterMax.Y)
 		return false;
 
-	for (int32 i = 0; i < MaxRetries; ++i)
+	for (int32 i = 0; i < InMaxRetries; ++i)
 	{
 		FJoustPredictionCircle Candidate;
 
-		Candidate.Center = RandomProvider.GetRandom(ValidCenterMin, ValidCenterMax);
+		Candidate.Center = InRandomProvider.GetRandom(ValidCenterMin, ValidCenterMax);
 
-		Candidate.Radius = NextRadius;
+		Candidate.Radius = InNextRadius;
 
-		if (!FJoustPredictionValidator::ValidateNext(CurrentCircle, Candidate, TargetPoint, LanceBoxMin, LanceBoxMax))
+		if (!FJoustPredictionValidator::ValidateNext(InCurrentCircle, Candidate, InTargetPoint, InLanceBoxMin, InLanceBoxMax))
 			continue;
 
 		OutCircle = Candidate;

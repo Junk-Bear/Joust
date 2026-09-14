@@ -14,7 +14,7 @@ class JOUST_API FJoustCardEffectResolver final
 {
 public:
 	static FJoustPlayerStats Resolve(
-		const FJoustPlayerStats& BaseStats,
-		const FJoustStrategyModifier& Modifier
+		const FJoustPlayerStats& InBaseStats,
+		const FJoustStrategyModifier& InModifier
 	);
 };

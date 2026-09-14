@@ -9,7 +9,7 @@ UJoustPredictionSeriesController::UJoustPredictionSeriesController() : FTickable
 
 void UJoustPredictionSeriesController::Initialize()
 {
-	if (Interpolation == nullptr)
+	if (!IsValid(Interpolation))
 	{
 		Interpolation = NewObject<UJoustPredictionInterpolation>(this);
 	}
@@ -18,7 +18,7 @@ void UJoustPredictionSeriesController::Initialize()
 bool UJoustPredictionSeriesController::StartPlayback(
 	const FJoustPredictionSettings & InSettings, const FJoustPredictionSeries & InRealSeries, const TArray<FJoustPredictionSeries>&InFakeSeries)
 {
-	if (bIsPlaying || Interpolation == nullptr || !ValidatePlaybackData(InSettings, InRealSeries, InFakeSeries))
+	if (bIsPlaying || !IsValid(Interpolation) || !ValidatePlaybackData(InSettings, InRealSeries, InFakeSeries))
 		return false;
 
 	ResetPlaybackData();
@@ -61,14 +61,14 @@ void UJoustPredictionSeriesController::BuildPredictionState(FJoustPredictionStat
 
 		OutState.DisplayCircles.Append(FakeDisplayCircles);
 
-		OutState.DisplayCircles.Sort([](const FJoustPredictionDisplayCircle& A, const FJoustPredictionDisplayCircle& B)
+		OutState.DisplayCircles.Sort([](const FJoustPredictionDisplayCircle& InA, const FJoustPredictionDisplayCircle& InB)
 			{
-				if (A.Center.X != B.Center.X)
+				if (InA.Center.X != InB.Center.X)
 				{
-					return A.Center.X < B.Center.X;
+					return InA.Center.X < InB.Center.X;
 				}
 
-				return A.Center.Y < B.Center.Y;
+				return InA.Center.Y < InB.Center.Y;
 			});
 
 		return;
@@ -89,12 +89,12 @@ void UJoustPredictionSeriesController::BeginDestroy()
 	Super::BeginDestroy();
 }
 
-void UJoustPredictionSeriesController::Tick(float DeltaTime)
+void UJoustPredictionSeriesController::Tick(float InDeltaTime)
 {
-	if (!bIsPlaying || !FMath::IsFinite(DeltaTime) || DeltaTime <= 0.0f)
+	if (!bIsPlaying || !FMath::IsFinite(InDeltaTime) || InDeltaTime <= 0.0f)
 		return;
 
-	float RemainingTime = DeltaTime;
+	float RemainingTime = InDeltaTime;
 
 	while (bIsPlaying && RemainingTime > 0.0f)
 	{

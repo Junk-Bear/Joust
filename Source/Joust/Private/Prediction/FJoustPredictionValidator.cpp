@@ -4,76 +4,76 @@
 #include "Prediction/FJoustPredictionValidator.h"
 #include "Prediction/JoustPredictionTypes.h"
 
-bool FJoustPredictionValidator::ValidateInitial(const FJoustPredictionCircle& Circle, const FVector2D& TargetPoint, const FVector2D& LanceBoxMin, const FVector2D& LanceBoxMax)
+bool FJoustPredictionValidator::ValidateInitial(const FJoustPredictionCircle& InCircle, const FVector2D& InTargetPoint, const FVector2D& InLanceBoxMin, const FVector2D& InLanceBoxMax)
 {
-    if (!ValidateLanceBox(LanceBoxMin, LanceBoxMax) || !IsPointInLanceBox(TargetPoint, LanceBoxMin, LanceBoxMax) ||
-        !ValidateCircle(Circle, LanceBoxMin, LanceBoxMax))
+    if (!ValidateLanceBox(InLanceBoxMin, InLanceBoxMax) || !IsPointInLanceBox(InTargetPoint, InLanceBoxMin, InLanceBoxMax) ||
+        !ValidateCircle(InCircle, InLanceBoxMin, InLanceBoxMax))
         return false;
 
-    if (Circle.Radius <= 0.0f)
+    if (InCircle.Radius <= 0.0f)
         return false;
 
-    return ContainsTargetPoint(Circle, TargetPoint);
+    return ContainsTargetPoint(InCircle, InTargetPoint);
 }
 
-bool FJoustPredictionValidator::ValidateNext(const FJoustPredictionCircle& CurrentCircle, const FJoustPredictionCircle& NextCircle, const FVector2D& TargetPoint, const FVector2D& LanceBoxMin, const FVector2D& LanceBoxMax)
+bool FJoustPredictionValidator::ValidateNext(const FJoustPredictionCircle& InCurrentCircle, const FJoustPredictionCircle& InNextCircle, const FVector2D& InTargetPoint, const FVector2D& InLanceBoxMin, const FVector2D& InLanceBoxMax)
 {
-    if (!ValidateLanceBox(LanceBoxMin, LanceBoxMax) ||
-        !IsPointInLanceBox(TargetPoint, LanceBoxMin, LanceBoxMax) ||
-        !ValidateCircle(CurrentCircle, LanceBoxMin, LanceBoxMax) ||
-        !ValidateCircle(NextCircle, LanceBoxMin, LanceBoxMax))
+    if (!ValidateLanceBox(InLanceBoxMin, InLanceBoxMax) ||
+        !IsPointInLanceBox(InTargetPoint, InLanceBoxMin, InLanceBoxMax) ||
+        !ValidateCircle(InCurrentCircle, InLanceBoxMin, InLanceBoxMax) ||
+        !ValidateCircle(InNextCircle, InLanceBoxMin, InLanceBoxMax))
         return false;
 
-    if (CurrentCircle.Radius <= 0.0f || NextCircle.Radius >= CurrentCircle.Radius)
+    if (InCurrentCircle.Radius <= 0.0f || InNextCircle.Radius >= InCurrentCircle.Radius)
         return false;
 
-    if (!ContainsTargetPoint(CurrentCircle, TargetPoint) ||
-        !ContainsTargetPoint(NextCircle, TargetPoint))
+    if (!ContainsTargetPoint(InCurrentCircle, InTargetPoint) ||
+        !ContainsTargetPoint(InNextCircle, InTargetPoint))
         return false;
 
-    return ContainsCircle(CurrentCircle, NextCircle);
+    return ContainsCircle(InCurrentCircle, InNextCircle);
 }
 
-bool FJoustPredictionValidator::ValidateLanceBox(const FVector2D& LanceBoxMin, const FVector2D& LanceBoxMax)
+bool FJoustPredictionValidator::ValidateLanceBox(const FVector2D& InLanceBoxMin, const FVector2D& InLanceBoxMax)
 {
-    if (!FMath::IsFinite(LanceBoxMin.X) || !FMath::IsFinite(LanceBoxMin.Y) ||
-        !FMath::IsFinite(LanceBoxMax.X) || !FMath::IsFinite(LanceBoxMax.Y))
+    if (!FMath::IsFinite(InLanceBoxMin.X) || !FMath::IsFinite(InLanceBoxMin.Y) ||
+        !FMath::IsFinite(InLanceBoxMax.X) || !FMath::IsFinite(InLanceBoxMax.Y))
         return false;
 
-    return LanceBoxMin.X <= LanceBoxMax.X && LanceBoxMin.Y <= LanceBoxMax.Y;
+    return InLanceBoxMin.X <= InLanceBoxMax.X && InLanceBoxMin.Y <= InLanceBoxMax.Y;
 }
 
-bool FJoustPredictionValidator::IsPointInLanceBox(const FVector2D& Point, const FVector2D& LanceBoxMin, const FVector2D& LanceBoxMax)
+bool FJoustPredictionValidator::IsPointInLanceBox(const FVector2D& InPoint, const FVector2D& InLanceBoxMin, const FVector2D& InLanceBoxMax)
 {
-    if (!FMath::IsFinite(Point.X) || !FMath::IsFinite(Point.Y))
+    if (!FMath::IsFinite(InPoint.X) || !FMath::IsFinite(InPoint.Y))
         return false;
 
-    return Point.X >= LanceBoxMin.X && Point.X <= LanceBoxMax.X &&
-        Point.Y >= LanceBoxMin.Y && Point.Y <= LanceBoxMax.Y;
+    return InPoint.X >= InLanceBoxMin.X && InPoint.X <= InLanceBoxMax.X &&
+        InPoint.Y >= InLanceBoxMin.Y && InPoint.Y <= InLanceBoxMax.Y;
 }
 
-bool FJoustPredictionValidator::ValidateCircle(const FJoustPredictionCircle& Circle, const FVector2D& LanceBoxMin, const FVector2D& LanceBoxMax)
+bool FJoustPredictionValidator::ValidateCircle(const FJoustPredictionCircle& InCircle, const FVector2D& InLanceBoxMin, const FVector2D& InLanceBoxMax)
 {
-    if (!FMath::IsFinite(Circle.Radius) || Circle.Radius < 0.0f)
+    if (!FMath::IsFinite(InCircle.Radius) || InCircle.Radius < 0.0f)
         return false;
 
-    return IsPointInLanceBox(Circle.Center, LanceBoxMin, LanceBoxMax);
+    return IsPointInLanceBox(InCircle.Center, InLanceBoxMin, InLanceBoxMax);
 }
 
-bool FJoustPredictionValidator::ContainsTargetPoint(const FJoustPredictionCircle& Circle, const FVector2D& TargetPoint)
+bool FJoustPredictionValidator::ContainsTargetPoint(const FJoustPredictionCircle& InCircle, const FVector2D& InTargetPoint)
 {
-    if (Circle.Radius == 0.0f)
+    if (InCircle.Radius == 0.0f)
     {
-        return Circle.Center == TargetPoint;
+        return InCircle.Center == InTargetPoint;
     }
 
-    return (Circle.Center - TargetPoint).SizeSquared() <= FMath::Square(Circle.Radius + KINDA_SMALL_NUMBER);
+    return (InCircle.Center - InTargetPoint).SizeSquared() <= FMath::Square(InCircle.Radius + KINDA_SMALL_NUMBER);
 }
 
-bool FJoustPredictionValidator::ContainsCircle(const FJoustPredictionCircle& OuterCircle, const FJoustPredictionCircle& InnerCircle)
+bool FJoustPredictionValidator::ContainsCircle(const FJoustPredictionCircle& InOuterCircle, const FJoustPredictionCircle& InInnerCircle)
 {
-    if (InnerCircle.Radius > OuterCircle.Radius)
+    if (InInnerCircle.Radius > InOuterCircle.Radius)
         return false;
 
-    return (OuterCircle.Center - InnerCircle.Center).SizeSquared() <= FMath::Square(OuterCircle.Radius - InnerCircle.Radius + KINDA_SMALL_NUMBER);
+    return (InOuterCircle.Center - InInnerCircle.Center).SizeSquared() <= FMath::Square(InOuterCircle.Radius - InInnerCircle.Radius + KINDA_SMALL_NUMBER);
 }

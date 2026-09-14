@@ -36,30 +36,30 @@ void AJoustPlayerState::ResetMatchState()
 	bUnhorsed = false;
 }
 
-void AJoustPlayerState::SetRemainingAttackUses(EJoustAttackType AttackType, int32 RemainingUses)
+void AJoustPlayerState::SetRemainingAttackUses(EJoustAttackType InAttackType, int32 InRemainingUses)
 {
-	RemainingAttackUses.Add(AttackType, RemainingUses);
+	RemainingAttackUses.Add(InAttackType, InRemainingUses);
 
 	for (FJoustAttackUsageState& Item : ReplicatedAttackUsageStates)
 	{
-		if (Item.AttackType == AttackType)
+		if (Item.AttackType == InAttackType)
 		{
-			Item.RemainingUses = RemainingUses;
+			Item.RemainingUses = InRemainingUses;
 
 			return;
 		}
 	}
 
-	FJoustAttackUsageState& NewUsageState = ReplicatedAttackUsageStates.AddDefaulted_GetRef();
-	NewUsageState.AttackType = AttackType;
-	NewUsageState.RemainingUses = RemainingUses;
+	FJoustAttackUsageState& NewUsageStateRef = ReplicatedAttackUsageStates.AddDefaulted_GetRef();
+	NewUsageStateRef.AttackType = InAttackType;
+	NewUsageStateRef.RemainingUses = InRemainingUses;
 }
 
-int32 AJoustPlayerState::GetRemainingAttackUses(EJoustAttackType AttackType) const
+int32 AJoustPlayerState::GetRemainingAttackUses(EJoustAttackType InAttackType) const
 {
-	const int32* RemainingUses = RemainingAttackUses.Find(AttackType);
+	const int32* RemainingUsesPtr = RemainingAttackUses.Find(InAttackType);
 
-	return RemainingUses != nullptr ? *RemainingUses : 0;
+	return RemainingUsesPtr != nullptr ? *RemainingUsesPtr : 0;
 }
 
 void AJoustPlayerState::AddAttackHistory(const FJoustAttackHistory& InAttackHistory)
@@ -80,14 +80,14 @@ void AJoustPlayerState::SetAttackUsageSnapshot(const TMap<EJoustAttackType, int3
 	RemainingAttackUses.Reserve(InRemainingAttackUses.Num());
 	ReplicatedAttackUsageStates.Reserve(InRemainingAttackUses.Num());
 
-	for (const TPair<EJoustAttackType, int32>& PairItem : InRemainingAttackUses)
+	for (const TPair<EJoustAttackType, int32>& Item : InRemainingAttackUses)
 	{
-		SetRemainingAttackUses(PairItem.Key,PairItem.Value);
+		SetRemainingAttackUses(Item.Key,Item.Value);
 	}
 
-	ReplicatedAttackUsageStates.Sort([](const FJoustAttackUsageState& A,const FJoustAttackUsageState& B)
+	ReplicatedAttackUsageStates.Sort([](const FJoustAttackUsageState& InA,const FJoustAttackUsageState& InB)
 		{
-			return static_cast<uint8>(A.AttackType) < static_cast<uint8>(B.AttackType);
+			return static_cast<uint8>(InA.AttackType) < static_cast<uint8>(InB.AttackType);
 		});
 }
 

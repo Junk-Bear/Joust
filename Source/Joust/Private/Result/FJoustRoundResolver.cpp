@@ -16,35 +16,35 @@ namespace Joust::Private
 {
 	//RoundResult의 멤버변수인 ExchangeResult를 채우는 함수
 	FJoustExchangeResult ResolveExchange(
-		const FJoustAttackData& AttackData,
-		const FJoustDefenseData& DefenseData,
-		float ImpactTime,
-		const UJoustRuleSetDataAsset& RuleSet,
-		IJoustRandomProvider& RandomProvider
+		const FJoustAttackData& InAttackData,
+		const FJoustDefenseData& InDefenseData,
+		float InImpactTime,
+		const UJoustRuleSetDataAsset& InRuleSet,
+		IJoustRandomProvider& InRandomProvider
 	)
 	{
 		FJoustExchangeResult Result{};
 
 		//Result 멤버변수들 값 채워넣기
-		Result.AttackData = AttackData;
+		Result.AttackData = InAttackData;
 
-		Result.DefenseResult = FJoustDefenseResolver::Resolve(AttackData, DefenseData, ImpactTime, RuleSet);
+		Result.DefenseResult = FJoustDefenseResolver::Resolve(InAttackData, InDefenseData, InImpactTime, InRuleSet);
 
 		Result.ScoreDelta = FJoustScoreResolver::Resolve(Result.DefenseResult);
 
-		const UJoustAttackTypeDataAsset* AttackTypeData = RuleSet.AttackTypeSettings.FindRef(AttackData.AttackType).Get();
+		const UJoustAttackTypeDataAsset* AttackTypeDataPtr = InRuleSet.AttackTypeSettings.FindRef(InAttackData.AttackType).Get();
 
-		if (!ensureMsgf(AttackTypeData != nullptr, TEXT("Missing AttackType")))
+		if (!ensureMsgf(IsValid(AttackTypeDataPtr), TEXT("Missing AttackType")))
 		{
 			return Result;
 		}
 
 		Result.bDefenderUnhorsed = FJoustCriticalResolver::Resolve(
-			RuleSet.BaseCriticalChance, RuleSet.MaxCriticalChance,
-			AttackTypeData->CriticalChanceMultiplier,
+			InRuleSet.BaseCriticalChance, InRuleSet.MaxCriticalChance,
+			AttackTypeDataPtr->CriticalChanceMultiplier,
 			Result.DefenseResult.CriticalDefenseMultiplier,
-			AttackData.Finishing, DefenseData.Stability,
-			RandomProvider, Result.FinalCriticalChance
+			InAttackData.Finishing, InDefenseData.Stability,
+			InRandomProvider, Result.FinalCriticalChance
 		);
 
 		return Result;
@@ -53,19 +53,19 @@ namespace Joust::Private
 }
 
 FJoustRoundResult FJoustRoundResolver::Resolve(
-	int32 RoundNumber, 
-	const FJoustAttackData& PlayerAAttackData, const FJoustDefenseData& PlayerBDefenseData, float PlayerAToBImpactTime, 
-	const FJoustAttackData& PlayerBAttackData, const FJoustDefenseData& PlayerADefenseData, float PlayerBToAImpactTime, 
-	const UJoustRuleSetDataAsset& RuleSet, IJoustRandomProvider& RandomProvider)
+	int32 InRoundNumber, 
+	const FJoustAttackData& InPlayerAAttackData, const FJoustDefenseData& InPlayerBDefenseData, float InPlayerAToBImpactTime, 
+	const FJoustAttackData& InPlayerBAttackData, const FJoustDefenseData& InPlayerADefenseData, float InPlayerBToAImpactTime, 
+	const UJoustRuleSetDataAsset& InRuleSet, IJoustRandomProvider& InRandomProvider)
 {
 	FJoustRoundResult Result{};
 
 	//RoudResult값 채우기
-	Result.RoundNumber = RoundNumber;
+	Result.RoundNumber = InRoundNumber;
 
-	Result.AtoBExchangeResult = Joust::Private::ResolveExchange(PlayerAAttackData, PlayerBDefenseData, PlayerAToBImpactTime, RuleSet, RandomProvider);
+	Result.AtoBExchangeResult = Joust::Private::ResolveExchange(InPlayerAAttackData, InPlayerBDefenseData, InPlayerAToBImpactTime, InRuleSet, InRandomProvider);
 
-	Result.BtoAExchangeResult = Joust::Private::ResolveExchange(PlayerBAttackData, PlayerADefenseData, PlayerBToAImpactTime, RuleSet, RandomProvider);
+	Result.BtoAExchangeResult = Joust::Private::ResolveExchange(InPlayerBAttackData, InPlayerADefenseData, InPlayerBToAImpactTime, InRuleSet, InRandomProvider);
 
 	const bool bPlayerBUnhorsed = Result.AtoBExchangeResult.bDefenderUnhorsed;
 

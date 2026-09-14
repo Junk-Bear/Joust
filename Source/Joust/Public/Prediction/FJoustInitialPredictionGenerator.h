@@ -15,10 +15,10 @@ class JOUST_API FJoustInitialPredictionGenerator final
 {
 public:
 	static bool Generate(
-		const FVector2D& TargetPoint,
-		float InitialRadius,
-		const FVector2D& LanceBoxMin, const FVector2D& LanceBoxMax,
-		int32 MaxRetries,
-		IJoustRandomProvider& RandomProvider,
+		const FVector2D& InTargetPoint,
+		float InInitialRadius,
+		const FVector2D& InLanceBoxMin, const FVector2D& InLanceBoxMax,
+		int32 InMaxRetries,
+		IJoustRandomProvider& InRandomProvider,
 		FJoustPredictionCircle& OutCircle);
 };

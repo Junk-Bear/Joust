@@ -8,40 +8,40 @@
 
 
 bool FJoustFakePredictionGenerator::Generate(
-	const FJoustPredictionSettings& Settings, 
-	const FVector2D& AttackPoint, 
-	int32 PredictionSeed, 
-	const FVector2D& LanceBoxMin, const FVector2D& LanceBoxMax,
-	int32 MaxRetries, float MinFakeAttackPointDistance, 
-	IJoustRandomProvider& RandomProvider, 
+	const FJoustPredictionSettings& InSettings, 
+	const FVector2D& InAttackPoint, 
+	int32 InPredictionSeed, 
+	const FVector2D& InLanceBoxMin, const FVector2D& InLanceBoxMax,
+	int32 InMaxRetries, float InMinFakeAttackPointDistance, 
+	IJoustRandomProvider& InRandomProvider, 
 	TArray<FJoustPredictionSeries>& OutFakeSeries)
 {
 	OutFakeSeries.Reset();
 
-	if (Settings.FakeCircleCount < 0 || 
-		MaxRetries <= 0 ||
-		!FMath::IsFinite(MinFakeAttackPointDistance) ||
-		MinFakeAttackPointDistance < 0.0f)
+	if (InSettings.FakeCircleCount < 0 || 
+		InMaxRetries <= 0 ||
+		!FMath::IsFinite(InMinFakeAttackPointDistance) ||
+		InMinFakeAttackPointDistance < 0.0f)
 		return false;
 
-	if (Settings.FakeCircleCount == 0)
+	if (InSettings.FakeCircleCount == 0)
 		return true;
 
 	TArray<FJoustPredictionSeries> CandidateFakeSeries;
 
-	CandidateFakeSeries.Reserve(Settings.FakeCircleCount);
+	CandidateFakeSeries.Reserve(InSettings.FakeCircleCount);
 
-	for (int32 i = 0; i < Settings.FakeCircleCount; ++i)
+	for (int32 i = 0; i < InSettings.FakeCircleCount; ++i)
 	{
 		FVector2D FakeAttackPoint;
 
-		if (!GenerateFakeAttackPoint(AttackPoint, LanceBoxMin, LanceBoxMax, MaxRetries, MinFakeAttackPointDistance, RandomProvider, FakeAttackPoint))
+		if (!GenerateFakeAttackPoint(InAttackPoint, InLanceBoxMin, InLanceBoxMax, InMaxRetries, InMinFakeAttackPointDistance, InRandomProvider, FakeAttackPoint))
 			return false;
 
 		FJoustPredictionSeries FakeSeries;
 
 		if (!FJoustPredictionSeriesGenerator::Generate(
-			Settings, FakeAttackPoint, PredictionSeed, LanceBoxMin, LanceBoxMax, MaxRetries, RandomProvider, FakeSeries))
+			InSettings, FakeAttackPoint, InPredictionSeed, InLanceBoxMin, InLanceBoxMax, InMaxRetries, InRandomProvider, FakeSeries))
 			return false;
 
 		CandidateFakeSeries.Add(MoveTemp(FakeSeries));
@@ -51,34 +51,34 @@ bool FJoustFakePredictionGenerator::Generate(
 	return true;
 }
 
-bool FJoustFakePredictionGenerator::GenerateFakeAttackPoint(const FVector2D& AttackPoint, const FVector2D& LanceBoxMin, const FVector2D& LanceBoxMax, int32 MaxRetries, float MinFakeAttackPointDistance, IJoustRandomProvider& RandomProvider, FVector2D& OutFakeAttackPoint)
+bool FJoustFakePredictionGenerator::GenerateFakeAttackPoint(const FVector2D& InAttackPoint, const FVector2D& InLanceBoxMin, const FVector2D& InLanceBoxMax, int32 InMaxRetries, float InMinFakeAttackPointDistance, IJoustRandomProvider& InRandomProvider, FVector2D& OutFakeAttackPoint)
 {
 	OutFakeAttackPoint = FVector2D::ZeroVector;
 
-	if (!FMath::IsFinite(AttackPoint.X) || !FMath::IsFinite(AttackPoint.Y) ||
-		!FMath::IsFinite(LanceBoxMin.X) || !FMath::IsFinite(LanceBoxMin.Y) ||
-		!FMath::IsFinite(LanceBoxMax.X) || !FMath::IsFinite(LanceBoxMax.Y) ||
-		!FMath::IsFinite(MinFakeAttackPointDistance) ||
-		LanceBoxMin.X > LanceBoxMax.X || LanceBoxMin.Y > LanceBoxMax.Y ||
-		MinFakeAttackPointDistance < 0.0f ||
-		MaxRetries <= 0)
+	if (!FMath::IsFinite(InAttackPoint.X) || !FMath::IsFinite(InAttackPoint.Y) ||
+		!FMath::IsFinite(InLanceBoxMin.X) || !FMath::IsFinite(InLanceBoxMin.Y) ||
+		!FMath::IsFinite(InLanceBoxMax.X) || !FMath::IsFinite(InLanceBoxMax.Y) ||
+		!FMath::IsFinite(InMinFakeAttackPointDistance) ||
+		InLanceBoxMin.X > InLanceBoxMax.X || InLanceBoxMin.Y > InLanceBoxMax.Y ||
+		InMinFakeAttackPointDistance < 0.0f ||
+		InMaxRetries <= 0)
 		return false;
 
-	if (AttackPoint.X < LanceBoxMin.X || AttackPoint.X > LanceBoxMax.X ||
-		AttackPoint.Y < LanceBoxMin.Y || AttackPoint.Y > LanceBoxMax.Y)
+	if (InAttackPoint.X < InLanceBoxMin.X || InAttackPoint.X > InLanceBoxMax.X ||
+		InAttackPoint.Y < InLanceBoxMin.Y || InAttackPoint.Y > InLanceBoxMax.Y)
 		return false;
 
-	FVector2D RandomMin = LanceBoxMin;
-	FVector2D RandomMax = LanceBoxMax;
+	FVector2D RandomMin = InLanceBoxMin;
+	FVector2D RandomMax = InLanceBoxMax;
 
-	for (int32 i = 0; i < MaxRetries; ++i)
+	for (int32 i = 0; i < InMaxRetries; ++i)
 	{
-		FVector2D Candidate = RandomProvider.GetRandom(RandomMin, RandomMax);
+		FVector2D Candidate = InRandomProvider.GetRandom(RandomMin, RandomMax);
 
 		if (!FMath::IsFinite(Candidate.X) || !FMath::IsFinite(Candidate.Y))
 			continue;
 
-		if ((Candidate - AttackPoint).SizeSquared() < FMath::Square(MinFakeAttackPointDistance))
+		if ((Candidate - InAttackPoint).SizeSquared() < FMath::Square(InMinFakeAttackPointDistance))
 			continue;
 
 		OutFakeAttackPoint = Candidate;

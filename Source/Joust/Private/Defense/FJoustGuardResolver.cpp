@@ -5,21 +5,21 @@
 #include "Common/JoustCommonTypes.h"
 
 EJoustGuardZone FJoustGuardResolver::Resolve(
-	const FVector2D& AttackPoint, const FVector2D& ShieldPoint, float PerfectRadius, float GoodRadius, float BadRadius, float& OutHitDistance)
+	const FVector2D& InAttackPoint, const FVector2D& InShieldPoint, float InPerfectRadius, float InGoodRadius, float InBadRadius, float& OutHitDistance)
 {
-	OutHitDistance = static_cast<float>(FVector2D::Distance(AttackPoint, ShieldPoint));
+	OutHitDistance = static_cast<float>(FVector2D::Distance(InAttackPoint, InShieldPoint));
 
-	if (OutHitDistance <= PerfectRadius)
+	if (OutHitDistance <= InPerfectRadius)
 	{
 		return EJoustGuardZone::Perfect;
 	}
 
-	if (OutHitDistance <= GoodRadius)
+	if (OutHitDistance <= InGoodRadius)
 	{
 		return EJoustGuardZone::Good;
 	}
 
-	if (OutHitDistance <= BadRadius)
+	if (OutHitDistance <= InBadRadius)
 	{
 		return EJoustGuardZone::Bad;
 	}

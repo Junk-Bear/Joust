@@ -8,20 +8,20 @@ void UJoustDefaultRandomProvider::Initialize(int32 InSeed)
 	RandomStream.Initialize(InSeed);
 }
 
-int32 UJoustDefaultRandomProvider::GetRandom(int32 Min, int32 Max)
+int32 UJoustDefaultRandomProvider::GetRandom(int32 InMin, int32 InMax)
 {
-	return RandomStream.RandRange(Min, Max);
+	return RandomStream.RandRange(InMin, InMax);
 }
 
-float UJoustDefaultRandomProvider::GetRandom(float Min, float Max)
+float UJoustDefaultRandomProvider::GetRandom(float InMin, float InMax)
 {
-	return RandomStream.FRandRange(Min, Max);
+	return RandomStream.FRandRange(InMin, InMax);
 }
 
-FVector2D UJoustDefaultRandomProvider::GetRandom(FVector2D& Min, FVector2D& Max)
+FVector2D UJoustDefaultRandomProvider::GetRandom(FVector2D& InMin, FVector2D& InMax)
 {
 	return FVector2D(
-		RandomStream.FRandRange(Min.X, Max.X), 
-		RandomStream.FRandRange(Min.Y, Max.Y)
+		RandomStream.FRandRange(InMin.X, InMax.X), 
+		RandomStream.FRandRange(InMin.Y, InMax.Y)
 	);
 }

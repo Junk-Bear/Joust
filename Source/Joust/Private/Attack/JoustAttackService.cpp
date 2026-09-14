@@ -24,7 +24,7 @@ bool UJoustAttackService::ResetMatchUsage()
 
     bMatchUsageInitialized = false;
 
-    if (RuleSet == nullptr)
+    if (!IsValid(RuleSet))
         return false;
 
     if (!PlayerAUsageTracker.Initialize(RuleSet->AttackTypeSettings))
@@ -42,7 +42,7 @@ bool UJoustAttackService::PrepareRound(const FJoustPlayerStats& InPlayerACurrent
 {
     ResetRoundState();
 
-    if (RuleSet == nullptr || RandomProvider == nullptr || !bMatchUsageInitialized)
+    if (!IsValid(RuleSet) || RandomProvider == nullptr || !bMatchUsageInitialized)
         return false;
 
     PlayerACurrentStats = InPlayerACurrentStats;
@@ -58,14 +58,14 @@ void UJoustAttackService::EndRound()
     ResetRoundState();
 }
 
-bool UJoustAttackService::SubmitAttack(bool bPlayerA, const FJoustAttackData& InAttackData)
+bool UJoustAttackService::SubmitAttack(bool bInPlayerA, const FJoustAttackData& InAttackData)
 {
-    if (RuleSet == nullptr || RandomProvider == nullptr ||
+    if (!IsValid(RuleSet) || RandomProvider == nullptr ||
         !bMatchUsageInitialized || !bRoundPrepared || !bSubmissionOpen
         )
         return false;
 
-    if (bPlayerA)
+    if (bInPlayerA)
     {
         if (bPlayerAAttackSubmitted)
             return false;
@@ -76,25 +76,25 @@ bool UJoustAttackService::SubmitAttack(bool bPlayerA, const FJoustAttackData& In
             return false;
     }
 
-    FJoustAttackUsageTracker& UsageTracker = bPlayerA ? PlayerAUsageTracker : PlayerBUsageTracker;
+    FJoustAttackUsageTracker& UsageTrackerRef = bInPlayerA ? PlayerAUsageTracker : PlayerBUsageTracker;
 
-    if (!FJoustAttackValidator::Validate(*RuleSet, UsageTracker, InAttackData.AttackPoint, InAttackData.AttackType))
+    if (!FJoustAttackValidator::Validate(*RuleSet, UsageTrackerRef, InAttackData.AttackPoint, InAttackData.AttackType))
         return false;
 
-    if (!UsageTracker.ConsumeUse(InAttackData.AttackType))
+    if (!UsageTrackerRef.ConsumeUse(InAttackData.AttackType))
         return false;
 
-    const FJoustPlayerStats& CurrentStats = bPlayerA ? PlayerACurrentStats : PlayerBCurrentStats;
+    const FJoustPlayerStats& CurrentStatsRef = bInPlayerA ? PlayerACurrentStats : PlayerBCurrentStats;
 
     FJoustAttackData FinalAttackData = InAttackData;
 
-    FinalAttackData.Finishing = CurrentStats.Finishing;
-    FinalAttackData.Deception = CurrentStats.Deception;
-    FinalAttackData.Quickness = CurrentStats.Quickness;
+    FinalAttackData.Finishing = CurrentStatsRef.Finishing;
+    FinalAttackData.Deception = CurrentStatsRef.Deception;
+    FinalAttackData.Quickness = CurrentStatsRef.Quickness;
 
     FinalAttackData.PredictionSeed = RandomProvider->GetRandom(0, MAX_int32);
 
-    if (bPlayerA)
+    if (bInPlayerA)
     {
         PlayerAAttackData = FinalAttackData;
 
@@ -110,12 +110,12 @@ bool UJoustAttackService::SubmitAttack(bool bPlayerA, const FJoustAttackData& In
     return true;
 }
 
-bool UJoustAttackService::IsPlayerComplete(bool bPlayerA) const
+bool UJoustAttackService::IsPlayerComplete(bool bInPlayerA) const
 {
     if (!bRoundPrepared)
         return false;
 
-    return bPlayerA ? bPlayerAAttackSubmitted : bPlayerBAttackSubmitted;
+    return bInPlayerA ? bPlayerAAttackSubmitted : bPlayerBAttackSubmitted;
 
 }
 
@@ -124,41 +124,41 @@ bool UJoustAttackService::AreBothPlayersComplete() const
     return IsPlayerComplete(true) && IsPlayerComplete(false);
 }
 
-bool UJoustAttackService::CanPlayerUseAttackType(bool bPlayerA, EJoustAttackType AttackType) const
+bool UJoustAttackService::CanPlayerUseAttackType(bool bInPlayerA, EJoustAttackType InAttackType) const
 {
     if (!bMatchUsageInitialized)
         return false;
 
-    const FJoustAttackUsageTracker& UsageTracker = bPlayerA ? PlayerAUsageTracker : PlayerBUsageTracker;
+    const FJoustAttackUsageTracker& UsageTrackerRef = bInPlayerA ? PlayerAUsageTracker : PlayerBUsageTracker;
 
-    return UsageTracker.CanUse(AttackType);
+    return UsageTrackerRef.CanUse(InAttackType);
 }
 
-int32 UJoustAttackService::GetRemainingUses(bool bPlayerA, EJoustAttackType AttackType) const
+int32 UJoustAttackService::GetRemainingUses(bool bInPlayerA, EJoustAttackType InAttackType) const
 {
     if (!bMatchUsageInitialized)
         return 0;
 
-    const FJoustAttackUsageTracker& UsageTracker = bPlayerA ? PlayerAUsageTracker : PlayerBUsageTracker;
+    const FJoustAttackUsageTracker& UsageTrackerRef = bInPlayerA ? PlayerAUsageTracker : PlayerBUsageTracker;
 
-    return UsageTracker.GetRemainingUses(AttackType);
+    return UsageTrackerRef.GetRemainingUses(InAttackType);
 }
 
-bool UJoustAttackService::GetUsageSnapshot(bool bPlayerA, TMap<EJoustAttackType, int32>& OutRemainingUses) const
+bool UJoustAttackService::GetUsageSnapshot(bool bInPlayerA, TMap<EJoustAttackType, int32>& OutRemainingUses) const
 {
     OutRemainingUses.Reset();
 
-    if (RuleSet == nullptr || !bMatchUsageInitialized)
+    if (!IsValid(RuleSet) || !bMatchUsageInitialized)
         return false;
 
     OutRemainingUses.Reserve(
         RuleSet->AttackTypeSettings.Num());
 
-    const FJoustAttackUsageTracker& UsageTracker = bPlayerA ? PlayerAUsageTracker : PlayerBUsageTracker;
+    const FJoustAttackUsageTracker& UsageTrackerRef = bInPlayerA ? PlayerAUsageTracker : PlayerBUsageTracker;
 
-    for (const TPair<EJoustAttackType,TObjectPtr<UJoustAttackTypeDataAsset>>& PairItem : RuleSet->AttackTypeSettings)
+    for (const TPair<EJoustAttackType,TObjectPtr<UJoustAttackTypeDataAsset>>& Item : RuleSet->AttackTypeSettings)
     {
-        OutRemainingUses.Add(PairItem.Key, UsageTracker.GetRemainingUses(PairItem.Key));
+        OutRemainingUses.Add(Item.Key, UsageTrackerRef.GetRemainingUses(Item.Key));
     }
 
     return true;

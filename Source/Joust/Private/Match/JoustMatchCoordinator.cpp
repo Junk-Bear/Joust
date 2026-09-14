@@ -10,7 +10,7 @@
 
 void UJoustMatchCoordinator::Initialize(UJoustRoundCoordinator* InRoundCoordinator, UJoustPhaseCoordinator* InPhaseCoordinator, const UJoustRuleSetDataAsset* InRuleSet)
 {
-	if (RoundCoordinator != nullptr)
+	if (IsValid(RoundCoordinator))
 	{
 		RoundCoordinator->SetMatchCoordinator(nullptr);
 	}
@@ -21,13 +21,13 @@ void UJoustMatchCoordinator::Initialize(UJoustRoundCoordinator* InRoundCoordinat
 	PhaseCoordinator = InPhaseCoordinator;
 
 	//룰셋 파라미터에서 꺼내기
-	BaseRoundCount = (InRuleSet != nullptr) ? InRuleSet->BaseRoundCount : 0;
+	BaseRoundCount = (IsValid(InRuleSet)) ? InRuleSet->BaseRoundCount : 0;
 
 	ResetMatchData();
 
 	FlowState = EMatchFlowState::Idle;
 
-	if (RoundCoordinator != nullptr)
+	if (IsValid(RoundCoordinator))
 	{
 		RoundCoordinator->SetMatchCoordinator(this);
 	}
@@ -35,7 +35,7 @@ void UJoustMatchCoordinator::Initialize(UJoustRoundCoordinator* InRoundCoordinat
 
 bool UJoustMatchCoordinator::StartMatch()
 {
-	if (RoundCoordinator == nullptr || !PhaseCoordinator.IsValid() || BaseRoundCount <= 0)
+	if (!IsValid(RoundCoordinator) || !PhaseCoordinator.IsValid() || BaseRoundCount <= 0)
 		return false;
 
 	if (FlowState != EMatchFlowState::Idle && FlowState != EMatchFlowState::Finished)
@@ -48,7 +48,7 @@ bool UJoustMatchCoordinator::StartMatch()
 
 	AJoustGameState* GameStatePtr = GameState.Get();
 
-	if (GameStatePtr != nullptr)
+	if (IsValid(GameStatePtr))
 	{
 		GameStatePtr->ResetMatchState();
 	}
@@ -86,7 +86,7 @@ bool UJoustMatchCoordinator::IsMatchActive() const
 
 void UJoustMatchCoordinator::BeginDestroy()
 {
-	if (RoundCoordinator != nullptr)
+	if (IsValid(RoundCoordinator))
 	{
 		RoundCoordinator->SetMatchCoordinator(nullptr);
 	}
@@ -103,7 +103,7 @@ bool UJoustMatchCoordinator::StartCurrentRound()
 {
 	if (
 		FlowState != EMatchFlowState::ReadyForRound ||
-		RoundCoordinator == nullptr || 
+		!IsValid(RoundCoordinator) || 
 		CurrentRoundNumber <= 0 || 
 		!RoundCoordinator->StartRound(CurrentRoundNumber))
 		return false;
@@ -112,7 +112,7 @@ bool UJoustMatchCoordinator::StartCurrentRound()
 
 	AJoustGameState* GameStatePtr = GameState.Get();
 
-	if (GameStatePtr != nullptr)
+	if (IsValid(GameStatePtr))
 	{
 		GameStatePtr->SetCurrentRoundNumber(CurrentRoundNumber);
 	}
@@ -120,26 +120,26 @@ bool UJoustMatchCoordinator::StartCurrentRound()
 	return true;
 }
 
-void UJoustMatchCoordinator::HandleRoundResolved(FJoustRoundResult& RoundResult)
+void UJoustMatchCoordinator::HandleRoundResolved(FJoustRoundResult& InRoundResult)
 {
 	if (FlowState != EMatchFlowState::RoundInProgress)
 		return;
 
-	if (RoundResult.RoundNumber != CurrentRoundNumber)
+	if (InRoundResult.RoundNumber != CurrentRoundNumber)
 		return;
 
-	PlayerAScore += RoundResult.AtoBExchangeResult.ScoreDelta;
-	PlayerBScore += RoundResult.BtoAExchangeResult.ScoreDelta;
+	PlayerAScore += InRoundResult.AtoBExchangeResult.ScoreDelta;
+	PlayerBScore += InRoundResult.BtoAExchangeResult.ScoreDelta;
 
 	AJoustGameState* GameStatePtr = GameState.Get();
 
-	if (GameStatePtr != nullptr)
+	if (IsValid(GameStatePtr))
 	{
 		GameStatePtr->SetScores(PlayerAScore, PlayerBScore);
 	}
 
-	const bool bPlayerAUnhorsed = RoundResult.BtoAExchangeResult.bDefenderUnhorsed;
-	const bool bPlayerBUnhorsed = RoundResult.AtoBExchangeResult.bDefenderUnhorsed;
+	const bool bPlayerAUnhorsed = InRoundResult.BtoAExchangeResult.bDefenderUnhorsed;
+	const bool bPlayerBUnhorsed = InRoundResult.AtoBExchangeResult.bDefenderUnhorsed;
 
 	//MatchResult 만들게 시키기
 	CurrentMatchResult = FJoustMatchResultResolver::Resolve(
@@ -167,7 +167,7 @@ bool UJoustMatchCoordinator::HandleRoundResolvedCompleted()
 
 	UJoustPhaseCoordinator* PhaseCoordinatorPtr = PhaseCoordinator.Get();
 
-	if (PhaseCoordinatorPtr == nullptr)
+	if (!IsValid(PhaseCoordinatorPtr))
 		return false;
 
 	if (!PhaseCoordinatorPtr->SetNoneTimedPhase(EJoustPhase::MatchResult))
@@ -175,7 +175,7 @@ bool UJoustMatchCoordinator::HandleRoundResolvedCompleted()
 
 	AJoustGameState* GameStatePtr = GameState.Get();
 
-	if (GameStatePtr != nullptr)
+	if (IsValid(GameStatePtr))
 	{
 		GameStatePtr->SetPhaseState(EJoustPhase::MatchResult, PhaseCoordinatorPtr->GetPhaseEndTime());
 

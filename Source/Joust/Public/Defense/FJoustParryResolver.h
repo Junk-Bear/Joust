@@ -13,11 +13,10 @@ enum class EJoustGuardZone : uint8;
 class JOUST_API FJoustParryResolver final
 {
 public:
-	/** 패링 입력 여부와 타이밍을 판단 */
 	static EJoustParryOutcome Resolve(
-		bool bParryAttempted, EJoustGuardZone GuardZone,
-		float ParryInputTime, float ImpactTime, float ParrySense,
-		float PerfectParryWindow, float GoodParryWindow, float BadParryWindow,
+		bool bInParryAttempted, EJoustGuardZone InGuardZone,
+		float InParryInputTime, float InImpactTime, float InParrySense,
+		float InPerfectParryWindow, float InGoodParryWindow, float InBadParryWindow,
 		float& OutTimingError, float& OutAllowedParryWindow
 	);
 };

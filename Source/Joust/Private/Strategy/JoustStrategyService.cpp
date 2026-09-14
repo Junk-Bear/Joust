@@ -20,12 +20,12 @@ void UJoustStrategyService::Initialize(UJoustRuleSetDataAsset* InRuleSet, IJoust
 bool UJoustStrategyService::PrepareRound(
 	const FJoustPlayerStats & InPlayerABaseStats, 
 	const FJoustPlayerStats & InPlayerBBaseStats, 
-	bool bPlayerAHasBanRight, 
-	bool bPlayerBHasBanRight)
+	bool bInPlayerAHasBanRight, 
+	bool bInPlayerBHasBanRight)
 {
 	ResetRoundState();
 
-	if (RuleSet == nullptr)
+	if (!IsValid(RuleSet))
 		return false;
 
 	if (RuleSet->CardShownPerRound <= 0)
@@ -42,7 +42,7 @@ bool UJoustStrategyService::PrepareRound(
 
 	const bool bBanSystemEnable = RuleSet->MaxCardBansPerPlayer > 0;
 
-	CardBanService.BeginRound((bBanSystemEnable && bPlayerAHasBanRight), (bBanSystemEnable && bPlayerBHasBanRight));
+	CardBanService.BeginRound((bBanSystemEnable && bInPlayerAHasBanRight), (bBanSystemEnable && bInPlayerBHasBanRight));
 
 	bRoundPrepared = true;
 
@@ -55,23 +55,23 @@ void UJoustStrategyService::EndRound()
 	ResetRoundState();
 }
 
-bool UJoustStrategyService::SubmitBan(bool bPlayerA, FName CardID)
+bool UJoustStrategyService::SubmitBan(bool bInPlayerA, FName InCardID)
 {
 	if (!bRoundPrepared || bStrategyFinalized)
 		return false;
 
-	return CardBanService.SubmitBan(bPlayerA, CardID, PublicCards);
+	return CardBanService.SubmitBan(bInPlayerA, InCardID, PublicCards);
 }
 
-bool UJoustStrategyService::SubmitStrategySelection(bool bPlayerA, FName CardID)
+bool UJoustStrategyService::SubmitStrategySelection(bool bInPlayerA, FName InCardID)
 {
-	if (!bRoundPrepared || bStrategyFinalized || CardID.IsNone())
+	if (!bRoundPrepared || bStrategyFinalized || InCardID.IsNone())
 		return false;
 
 	if (!CardBanService.AreAllRequiredBanSumitted())
 		return false;
 
-	if (bPlayerA)
+	if (bInPlayerA)
 	{
 		if (bPlayerASelectionSubmitted)
 			return false;
@@ -82,22 +82,22 @@ bool UJoustStrategyService::SubmitStrategySelection(bool bPlayerA, FName CardID)
 			return false;
 	}
 
-	if (CardBanService.IsCardBannedForPlayer(bPlayerA, CardID))
+	if (CardBanService.IsCardBannedForPlayer(bInPlayerA, InCardID))
 		return false;
 
-	UJoustStrategyCardDataAsset* SelectedCard = FindPublicCardByID(CardID);
+	UJoustStrategyCardDataAsset* SelectedCardPtr = FindPublicCardByID(InCardID);
 
-	if (SelectedCard == nullptr)
+	if (!IsValid(SelectedCardPtr))
 		return false;
 
-	if (bPlayerA)
+	if (bInPlayerA)
 	{
-		PlayerASelectedCard = SelectedCard;
+		PlayerASelectedCard = SelectedCardPtr;
 		bPlayerASelectionSubmitted = true;
 	}
 	else
 	{
-		PlayerBSelectedCard= SelectedCard;
+		PlayerBSelectedCard= SelectedCardPtr;
 		bPlayerBSelectionSubmitted = true;
 	}
 
@@ -112,7 +112,7 @@ bool UJoustStrategyService::FinalizeStrategy()
 	if (!AreBothPlayersComplete())
 		return false;
 
-	if (PlayerASelectedCard == nullptr || PlayerBSelectedCard == nullptr)
+	if (!IsValid(PlayerASelectedCard) || !IsValid(PlayerBSelectedCard))
 		return false;
 
 	PlayerACurrentStats = FJoustCardEffectResolver::Resolve(PlayerABaseStats, PlayerASelectedCard->Modifier);
@@ -123,15 +123,15 @@ bool UJoustStrategyService::FinalizeStrategy()
 	return true;
 }
 
-bool UJoustStrategyService::IsPlayerComplete(bool bPlayerA) const
+bool UJoustStrategyService::IsPlayerComplete(bool bInPlayerA) const
 {
 	if (!bRoundPrepared)
 		return false;
 
-	if (CardBanService.HasPendingBan(bPlayerA))
+	if (CardBanService.HasPendingBan(bInPlayerA))
 		return false;
 
-	return bPlayerA ? bPlayerASelectionSubmitted : bPlayerBSelectionSubmitted;
+	return bInPlayerA ? bPlayerASelectionSubmitted : bPlayerBSelectionSubmitted;
 }
 
 bool UJoustStrategyService::AreBothPlayersComplete() const
@@ -144,7 +144,7 @@ bool UJoustStrategyService::AreBansComplete() const
 	return bRoundPrepared && CardBanService.AreAllRequiredBanSumitted();
 }
 
-bool UJoustStrategyService::GetSelectableCards(bool bPlayerA, TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& OutCards) const
+bool UJoustStrategyService::GetSelectableCards(bool bInPlayerA, TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& OutCards) const
 {
 	OutCards.Reset();
 
@@ -156,34 +156,34 @@ bool UJoustStrategyService::GetSelectableCards(bool bPlayerA, TArray<TObjectPtr<
 
 	OutCards.Reserve(PublicCards.Num());
 
-	for (UJoustStrategyCardDataAsset* CardItem : PublicCards)
+	for (UJoustStrategyCardDataAsset* Item : PublicCards)
 	{
-		if (CardItem == nullptr)
+		if (!IsValid(Item))
 			continue;
 
-		if (CardBanService.IsCardBannedForPlayer(bPlayerA, CardItem->CardID))
+		if (CardBanService.IsCardBannedForPlayer(bInPlayerA, Item->CardID))
 			continue;
 
-		OutCards.Add(CardItem);
+		OutCards.Add(Item);
 	}
 
 	return OutCards.Num() > 0;
 }
 
-FName UJoustStrategyService::GetSelectedCardID(bool bPlayerA) const
+FName UJoustStrategyService::GetSelectedCardID(bool bInPlayerA) const
 {
-	const UJoustStrategyCardDataAsset* SelectedCard = bPlayerA ? PlayerASelectedCard.Get() : PlayerBSelectedCard.Get();
+	const UJoustStrategyCardDataAsset* SelectedCardPtr = bInPlayerA ? PlayerASelectedCard.Get() : PlayerBSelectedCard.Get();
 
-	return SelectedCard != nullptr ? SelectedCard->CardID : NAME_None;
+	return IsValid(SelectedCardPtr) ? SelectedCardPtr->CardID : NAME_None;
 }
 
-UJoustStrategyCardDataAsset* UJoustStrategyService::FindPublicCardByID(FName CardID) const
+UJoustStrategyCardDataAsset* UJoustStrategyService::FindPublicCardByID(FName InCardID) const
 {
-	for (UJoustStrategyCardDataAsset* CardItem : PublicCards)
+	for (UJoustStrategyCardDataAsset* Item : PublicCards)
 	{
-		if (CardItem != nullptr && CardItem->CardID == CardID)
+		if (IsValid(Item) && Item->CardID == InCardID)
 		{
-			return CardItem;
+			return Item;
 		}
 	}
 

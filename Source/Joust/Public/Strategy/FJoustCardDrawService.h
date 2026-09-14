@@ -14,9 +14,9 @@ class JOUST_API FJoustCardDrawService final
 {
 public:
 	static bool Draw(
-		const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& CardPool,
-		int32 CardsToDraw,
-		IJoustRandomProvider& RandomProvider,
+		const TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& InCardPool,
+		int32 InCardsToDraw,
+		IJoustRandomProvider& InRandomProvider,
 		TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& OutCards
 	);
 };

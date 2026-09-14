@@ -74,7 +74,7 @@ private: // ########## private 함수 블록 ##########
 	* 
 	* 누적 점수 반영, 낙마상태 확인, MatchResultResolver호출하기 
 	*/
-	void HandleRoundResolved(FJoustRoundResult& RoundResult);
+	void HandleRoundResolved(FJoustRoundResult& InRoundResult);
 
 	/**
 	* RoundResult 연출 끝나고 RoundCoordinator가 직접 호출함.
@@ -111,7 +111,7 @@ private: // ########### private 변수 블록 ############
 	/** MatchResultResolver 결과 */
 	FJoustMatchResult CurrentMatchResult{};
 
-	/** 최종 경기 결과 Event */
+	/** FOnMatchResult 이벤트용 */
 	FOnMatchResult MatchResultEvent;
 
 	/** 공개 경기 상태 */
