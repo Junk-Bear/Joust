@@ -156,6 +156,21 @@ void AJoustPlayerController::ResetDefenseInput()
 	ParryInputTime = 0.0f;
 }
 
+void AJoustPlayerController::RequestAttack(EJoustAttackType InAttackType, const FVector2D& InAttackPoint)
+{
+	if (!IsLocalController() || !FMath::IsFinite(InAttackPoint.X) || !FMath::IsFinite(InAttackPoint.Y))
+		return;
+
+	if (HasAuthority())
+	{
+		HandleAttackRequest(InAttackType, InAttackPoint);
+
+		return;
+	}
+
+	ServerRequestAttack(InAttackType, InAttackPoint);
+}
+
 FVector2D AJoustPlayerController::GetShieldPoint() const
 {
 	return ShieldPoint;
@@ -217,6 +232,38 @@ void AJoustPlayerController::HandleStrategyBanRequest(FName InCardID)
 	GameModePtr->SubmitPlayerStrategyBan(
 		this,
 		InCardID);
+}
+
+void AJoustPlayerController::HandleAttackRequest(EJoustAttackType InAttackType, const FVector2D& InAttackPoint)
+{
+	if (!HasAuthority())
+		return;
+
+	bool bAccepted = false;
+
+	UWorld* WorldPtr = GetWorld();
+
+	if (IsValid(WorldPtr))
+	{
+		AJoustGameMode* GameModePtr = WorldPtr->GetAuthGameMode<AJoustGameMode>();
+
+		if (IsValid(GameModePtr))
+		{
+			bAccepted =	GameModePtr->SubmitPlayerAttack(this, InAttackType, InAttackPoint);
+		}
+	}
+
+	ClientAttackRequestCompleted(bAccepted);
+}
+
+void AJoustPlayerController::ServerRequestAttack_Implementation(EJoustAttackType InAttackType, FVector2D InAttackPoint)
+{
+	HandleAttackRequest(InAttackType, InAttackPoint);
+}
+
+void AJoustPlayerController::ClientAttackRequestCompleted_Implementation(bool bInAccepted)
+{
+	AttackRequestCompletedEvent.Broadcast(bInAccepted);
 }
 
 void AJoustPlayerController::HandleStartMatchRequest()

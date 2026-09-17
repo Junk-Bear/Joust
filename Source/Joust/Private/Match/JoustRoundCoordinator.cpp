@@ -185,6 +185,9 @@ bool UJoustRoundCoordinator::BeginAttackPhase()
 	if (!IsValid(RuleSet) || !IsValid(AttackService) || !AttackService->IsRoundPrepared())
 		return false;
 
+
+	AttackService->SetSubmissionOpen(true);
+
 	const bool bStarted = BeginTimedPhase(
 		EJoustPhase::Attack,
 		RuleSet->AttackPhaseDuration,
@@ -192,9 +195,9 @@ bool UJoustRoundCoordinator::BeginAttackPhase()
 		ERoundFlowState::ReadyForAttack, ERoundFlowState::Attack
 	);
 
-	if (bStarted)
+	if (!bStarted)
 	{
-		AttackService->SetSubmissionOpen(true);
+		AttackService->SetSubmissionOpen(false);
 	}
 
 	return bStarted;
@@ -410,8 +413,10 @@ bool UJoustRoundCoordinator::PreparePredictions()
 
 bool UJoustRoundCoordinator::ArePredictionsPrepared() const
 {
-	return AToBPredictionService && BToAPredictionService &&
-		AToBPredictionService->IsPrepared() && BToAPredictionService->IsPrepared();;
+	return IsValid(AToBPredictionService) && 
+		IsValid(BToAPredictionService) &&
+		AToBPredictionService->IsPrepared() && 
+		BToAPredictionService->IsPrepared();;
 }
 
 bool UJoustRoundCoordinator::StartPredictionPlayback()
@@ -563,6 +568,68 @@ void UJoustRoundCoordinator::SyncStrategyPublicCards()
 	}
 
 	GameStatePtr->SetPublicStrategyCardIDs(PublicCardIDs);
+}
+
+bool UJoustRoundCoordinator::SubmitDefaultStrategySelection(bool bInPlayerA)
+{
+	if (!IsValid(StrategyService))
+		return false;
+
+	if (StrategyService->IsPlayerComplete(bInPlayerA))
+		return true;
+
+	TArray<TObjectPtr<UJoustStrategyCardDataAsset>> SelectableCards;
+
+	if (!StrategyService->GetSelectableCards(bInPlayerA, SelectableCards))
+		return false;
+
+	for (UJoustStrategyCardDataAsset* Item : SelectableCards)
+	{
+		if (IsValid(Item) && StrategyService->SubmitStrategySelection(bInPlayerA, Item->CardID))
+			return true;
+	}
+
+	return false;
+}
+
+bool UJoustRoundCoordinator::SubmitDefaultAttack(bool bInPlayerA)
+{
+	if (!IsValid(AttackService) || !IsValid(RuleSet))
+		return false;
+
+	if (AttackService->IsPlayerComplete(bInPlayerA))
+		return true;
+
+	AJoustPlayerState* PlayerStatePtr = bInPlayerA ? PlayerAState.Get() : PlayerBState.Get();
+
+	if (!IsValid(PlayerStatePtr))
+		return false;
+
+	static constexpr EJoustAttackType DefaultAttackTypeOrder[] = { EJoustAttackType::Normal, EJoustAttackType::Strong, EJoustAttackType::Trick, EJoustAttackType::Slow};
+
+	const FVector2D DefaultAttackPoint = (RuleSet->LanceBoxMin + RuleSet->LanceBoxMax) * 0.5f;
+
+	for (EJoustAttackType Item : DefaultAttackTypeOrder)
+	{
+		if (!AttackService->CanPlayerUseAttackType(bInPlayerA, Item))
+			continue;
+
+		FJoustAttackData AttackData{};
+
+		AttackData.AttackPoint = DefaultAttackPoint;
+		AttackData.AttackType = Item;
+
+		if (!AttackService->SubmitAttack(bInPlayerA, AttackData))
+			continue;
+
+		PlayerStatePtr->SetRemainingAttackUses(
+			Item,
+			AttackService->GetRemainingUses(bInPlayerA, Item));
+
+		return true;
+	}
+
+	return false;
 }
 
 bool UJoustRoundCoordinator::SubmitStrategyBan(bool bInPlayerA, const IJoustStrategyInput& InStrategyInput)
@@ -839,6 +906,18 @@ void UJoustRoundCoordinator::HandlePhaseEnded(EJoustPhase InEndedPhase)
 		if (!IsValid(PlayerAStatePtr) || !IsValid(PlayerBStatePtr))
 			break;
 
+		if (!StrategyService->AreBansComplete())
+		{
+			StrategyService->SkipPendingBan(true);
+			StrategyService->SkipPendingBan(false);
+
+			if (AJoustGameState* GameStatePtr = GameState.Get())
+				GameStatePtr->SetPendingStrategyBans(false, false);
+		}
+
+		if (!SubmitDefaultStrategySelection(true) ||!SubmitDefaultStrategySelection(false))
+			break;
+
 		if (!StrategyService->FinalizeStrategy())
 			break;
 
@@ -862,6 +941,13 @@ void UJoustRoundCoordinator::HandlePhaseEnded(EJoustPhase InEndedPhase)
 	{
 		if (FlowState != ERoundFlowState::Attack || !IsValid(AttackService))
 			break;
+
+		if (!SubmitDefaultAttack(true) || !SubmitDefaultAttack(false))
+		{
+			AttackService->SetSubmissionOpen(false);
+
+			break;
+		}
 
 		AttackService->SetSubmissionOpen(false);
 

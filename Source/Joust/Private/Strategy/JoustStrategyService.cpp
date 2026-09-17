@@ -177,6 +177,14 @@ FName UJoustStrategyService::GetSelectedCardID(bool bInPlayerA) const
 	return IsValid(SelectedCardPtr) ? SelectedCardPtr->CardID : NAME_None;
 }
 
+void UJoustStrategyService::SkipPendingBan(bool bInPlayerA)
+{
+	if (!bRoundPrepared || bStrategyFinalized)
+		return;
+
+	CardBanService.SkipPendingBan(bInPlayerA);
+}
+
 UJoustStrategyCardDataAsset* UJoustStrategyService::FindPublicCardByID(FName InCardID) const
 {
 	for (UJoustStrategyCardDataAsset* Item : PublicCards)

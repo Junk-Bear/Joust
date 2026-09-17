@@ -187,6 +187,12 @@ private: // ########## private 함수 블록 ##########
 	/** 이번 라운드 공개 Strategy 카드 목록을 GameState에 동기화 */
 	void SyncStrategyPublicCards();
 
+	/** Strategy 시간 초과 시 선택 가능한 기본 카드를 제출 */
+	bool SubmitDefaultStrategySelection(bool bInPlayerA);
+
+	/** Attack 시간 초과 시 사용 가능한 기본 공격을 제출 */
+	bool SubmitDefaultAttack(bool bInPlayerA);
+
 private: // ########## private 변수 블록 ##########
 
 	/** RoundCoordinator 존재 -> PhaseCoordinator 반드시 존재 */

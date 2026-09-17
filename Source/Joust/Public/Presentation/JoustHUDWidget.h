@@ -45,6 +45,8 @@ public: // ########### GET SET 블록 ##########
 
 	FORCEINLINE UJoustStrategyWidget* GetStrategyWidget() const { return WBP_JoustStrategy; }
 
+	FORCEINLINE UJoustAttackWidget* GetAttackWidget() const { return WBP_JoustAttack; }
+
 private: // ########## Bind Widget 블록 ##########
 
 	/** 상단 공통 HUD */

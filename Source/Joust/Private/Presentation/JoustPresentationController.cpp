@@ -11,6 +11,7 @@
 #include "Presentation/JoustMatchStartWidget.h"
 #include "Presentation/JoustStrategyWidget.h"
 #include "Rules/JoustRuleSetDataAsset.h"
+#include "Presentation/JoustAttackWidget.h"
 
 bool UJoustPresentationController::Initialize(AJoustPlayerController* InPlayerController, AJoustHUD* InHUD, UJoustHUDWidget* InRootWidget)
 {
@@ -42,6 +43,7 @@ bool UJoustPresentationController::Initialize(AJoustPlayerController* InPlayerCo
 	RefreshCommonHUD();
 	RefreshCurrentScreen();
 	RefreshStrategyScreen();
+	RefreshAttackScreen();
 
 	LastDisplayedRemainingSeconds = INDEX_NONE;
 	UpdateRemainingTime();
@@ -119,9 +121,23 @@ void UJoustPresentationController::HandlePhaseStateChanged()
 
 	AJoustGameState* GameStatePtr = GameState.Get();
 
-	if (IsValid(GameStatePtr) && GameStatePtr->GetCurrentPhase() == EJoustPhase::Strategy)
+	if (IsValid(GameStatePtr))
 	{
-		RefreshStrategyScreen();
+		switch(GameStatePtr->GetCurrentPhase())
+		{
+			case EJoustPhase::Strategy:
+				RefreshStrategyScreen();
+
+				break;
+
+			case EJoustPhase::Attack:
+				RefreshAttackScreen();
+
+				break;
+
+			default:
+				break;
+		}
 	}
 
 	LastDisplayedRemainingSeconds = INDEX_NONE;
@@ -349,12 +365,70 @@ void UJoustPresentationController::HandleStrategyBanConfirmed(FName InCardID)
 	PlayerControllerPtr->RequestStrategyBan(InCardID);
 }
 
+void UJoustPresentationController::RefreshAttackScreen()
+{
+	AJoustGameState* GameStatePtr = GameState.Get();
+	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
+	AJoustPlayerState* PlayerStatePtr = GetPlayerState();
+
+	if (!IsValid(GameStatePtr) || !IsValid(RootWidgetPtr) || !IsValid(PlayerStatePtr))
+		return;
+
+	UJoustAttackWidget* AttackWidgetPtr = RootWidgetPtr->GetAttackWidget();
+
+	if (!IsValid(AttackWidgetPtr))
+		return;
+
+	const UJoustRuleSetDataAsset* RuleSetPtr = GameStatePtr->GetRuleSet();
+
+	if (!IsValid(RuleSetPtr))
+		return;
+
+	AttackWidgetPtr->SetAttackUsageStates(PlayerStatePtr->GetReplicatedAttackUsageStates());
+
+	AttackWidgetPtr->SetLanceBoxBounds(RuleSetPtr->LanceBoxMin, RuleSetPtr->LanceBoxMax);
+
+	AttackWidgetPtr->ResetAttackSelection();
+}
+
+void UJoustPresentationController::HandleAttackConfirmed(EJoustAttackType InAttackType, FVector2D InAttackPoint)
+{
+	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
+
+	if (!IsValid(PlayerControllerPtr))
+		return;
+
+	PlayerControllerPtr->RequestAttack(InAttackType, InAttackPoint);
+}
+
+void UJoustPresentationController::HandleAttackRequestCompleted(bool bInAccepted)
+{
+	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
+
+	if (!IsValid(RootWidgetPtr))
+		return;
+
+	UJoustAttackWidget* AttackWidgetPtr = RootWidgetPtr->GetAttackWidget();
+
+	if (!IsValid(AttackWidgetPtr))
+		return;
+
+	AttackWidgetPtr->SetAttackRequestResult(bInAccepted);
+}
+
 void UJoustPresentationController::BindWidgetEvents()
 {
 	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
 
 	if (!IsValid(RootWidgetPtr))
 		return;
+
+	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
+
+	if (IsValid(PlayerControllerPtr))
+	{
+		PlayerControllerPtr->OnAttackRequestCompleted().AddUObject(this, &UJoustPresentationController::HandleAttackRequestCompleted);
+	}
 
 	UJoustMatchStartWidget* MatchStartWidgetPtr = RootWidgetPtr->GetMatchStartWidget();
 
@@ -371,10 +445,24 @@ void UJoustPresentationController::BindWidgetEvents()
 
 		StrategyWidgetPtr->OnStrategyBanConfirmed().AddUObject(this, &UJoustPresentationController::HandleStrategyBanConfirmed);
 	}
+
+	UJoustAttackWidget* AttackWidgetPtr = RootWidgetPtr->GetAttackWidget();
+
+	if (IsValid(AttackWidgetPtr))
+	{
+		AttackWidgetPtr->OnAttackConfirmed().AddUObject(this, &UJoustPresentationController::HandleAttackConfirmed);
+	}
 }
 
 void UJoustPresentationController::UnbindWidgetEvents()
 {
+	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
+
+	if (IsValid(PlayerControllerPtr))
+	{
+		PlayerControllerPtr->OnAttackRequestCompleted().RemoveAll(this);
+	}
+
 	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
 
 	if (!IsValid(RootWidgetPtr))
@@ -394,6 +482,13 @@ void UJoustPresentationController::UnbindWidgetEvents()
 		StrategyWidgetPtr->OnStrategyConfirmed().RemoveAll(this);
 
 		StrategyWidgetPtr->OnStrategyBanConfirmed().RemoveAll(this);
+	}
+
+	UJoustAttackWidget* AttackWidgetPtr = RootWidgetPtr->GetAttackWidget();
+
+	if (IsValid(AttackWidgetPtr))
+	{
+		AttackWidgetPtr->OnAttackConfirmed().RemoveAll(this);
 	}
 }
 

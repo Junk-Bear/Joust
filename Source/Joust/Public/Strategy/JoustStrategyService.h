@@ -60,6 +60,9 @@ public: // ########## public 함수 블록 ##########
 	/** 해당 플레이어가 선택한 전략 카드 ID 반환 */
 	FName GetSelectedCardID(bool bInPlayerA) const;
 
+	/** 시간 초과된 플레이어의 봉인 입력을 건너뛰고 완료 처리 */
+	void SkipPendingBan(bool bInPlayerA);
+
 private: // ########## private 함수 블록 ##########
 
 	/** 공개 카드 중 CardID와 일치하는 카드를 찾기 */

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "TimerManager.h"
+#include "Common/JoustCommonTypes.h"
 #include "JoustPresentationController.generated.h"
 
 class AJoustGameState;
@@ -81,6 +82,14 @@ private: // ########## private 함수 블록 ##########
 	/** Strategy 화면에서 선택한 봉인 카드 요청을 전달 */
 	void HandleStrategyBanConfirmed(FName InCardID);
 
+	/** 공격 사용 횟수와 LanceBox 범위를 Attack 화면에 반영 */
+	void RefreshAttackScreen();
+
+	/** Attack 화면에서 확정한 공격 요청 전달 */
+	void HandleAttackConfirmed(EJoustAttackType InAttackType, FVector2D InAttackPoint);
+
+	/** 서버의 공격 요청 처리 결과를 Attack 화면에 전달 */
+	void HandleAttackRequestCompleted(bool bInAccepted);
 
 private: // ########## private 변수 블록 ##########
 

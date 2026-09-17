@@ -115,6 +115,31 @@ bool AJoustGameMode::SubmitPlayerStrategyBan(AJoustPlayerController* InRequestin
 	
 }
 
+bool AJoustGameMode::SubmitPlayerAttack(AJoustPlayerController* InRequestingController, EJoustAttackType InAttackType, const FVector2D& InAttackPoint)
+{
+	if (!bMatchCoreReady || !IsValid(InRequestingController) || !IsValid(RoundCoordinator) || !IsValid(MatchCoordinator) || !MatchCoordinator->IsMatchActive())
+		return false;
+
+	const bool bPlayerA = InRequestingController == PlayerAController.Get();
+	const bool bPlayerB = InRequestingController == PlayerBController.Get();
+
+	if (!bPlayerA && !bPlayerB)
+		return false;
+
+	InRequestingController->SetAttackType(InAttackType);
+	InRequestingController->SetAttackPoint(InAttackPoint);
+	InRequestingController->ConfirmAttack();
+
+	if (!RoundCoordinator->SubmitAttack(bPlayerA, *InRequestingController))
+	{
+		InRequestingController->ResetAttackInput();
+
+		return false;
+	}
+
+	return true;
+}
+
 void AJoustGameMode::InitGameState()
 {
 	Super::InitGameState();
@@ -324,6 +349,38 @@ void AJoustGameMode::HandleRoundPhaseStarted(EJoustPhase InPhase)
 {
 	if (!IsValid(RoundCoordinator))
 		return;
+
+	AController* HumanControllerPtrs[] = { PlayerAController.Get(), PlayerBController.Get() };
+
+	for (AController* Item : HumanControllerPtrs)
+	{
+		AJoustPlayerController* PlayerControllerPtr = Cast<AJoustPlayerController>(Item);
+
+		if (!IsValid(PlayerControllerPtr))
+			continue;
+
+		switch (InPhase)
+		{
+		case EJoustPhase::Strategy:
+			PlayerControllerPtr->ResetStrategyInput();
+
+			break;
+
+		case EJoustPhase::Attack:
+			PlayerControllerPtr->ResetAttackInput();
+
+			break;
+
+		case EJoustPhase::Defense:
+			PlayerControllerPtr->ResetDefenseInput();
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
 
 	if (AJoustAIController* PlayerAAIControllerPtr = Cast<AJoustAIController>(PlayerAController.Get()))
 	{

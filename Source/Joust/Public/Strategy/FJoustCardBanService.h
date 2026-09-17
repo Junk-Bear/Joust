@@ -36,6 +36,9 @@ public: // ########## public 함수 블록 ##########
 	/** 봉인 적용된 카드 ID를 반환 */
 	FName GetBannedCardIDForPlayer(bool bInTargetPlayerA) const;
 
+	/** 시간 초과된 플레이어의 남은 봉인권을 사용하지 않고 종료 */
+	void SkipPendingBan(bool bInPlayerA);
+
 private: // ########## private 함수 블록 ##########
 
 	/** 지정한 카드가 이번 공개 카드 목록에 있는지 확인 */

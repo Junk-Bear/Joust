@@ -45,6 +45,9 @@ public: // ########## public 함수 블록 ##########
 	/** 플레이어의 Strategy 카드 봉인 요청을 서버에서 검증하고 제출 */
 	bool SubmitPlayerStrategyBan(AJoustPlayerController* InRequestingController, FName InCardID);
 
+	/** Player의 Attack 입력을 서버에서 검증하고 제출 */
+	bool SubmitPlayerAttack(AJoustPlayerController* InRequestingController, EJoustAttackType InAttackType, const FVector2D& InAttackPoint);
+
 protected: // ########## protected 함수 블록 ##########
 
 	/** GameState 생성 후 경기 코어 초기화 */

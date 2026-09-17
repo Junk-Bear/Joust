@@ -18,6 +18,11 @@ class JOUST_API AJoustPlayerController : public APlayerController, public IJoust
 {
 	GENERATED_BODY()
 
+public: // ########## 델리게이트 블록 ##########
+
+	/** 서버의 공격 요청 처리 결과 이벤트 */
+	DECLARE_EVENT_OneParam(AJoustPlayerController, FOnAttackRequestCompleted, bool);
+
 public: // ########### public 함수 블록 ##########
 
 	/** Local UI 에서 경기 시작을 요청 */
@@ -31,10 +36,6 @@ public: // ########### public 함수 블록 ##########
 
 	/** Strategy 입력을 초기화 */
 	void ResetStrategyInput();
-
-	/** IJoustStrategyInput을(를) 통해 상속됨 */
-	bool TryGetSelectedStrategyCardID(FName& OutCardID) const override;
-	bool TryGetBannedStrategyCardID(FName& OutCardID) const override;
 
 	/** Local UI에서 선택한 전략 카드를 서버에 제출 요청 */
 	void RequestStrategySelection(FName InCardID);
@@ -54,11 +55,6 @@ public: // ########### public 함수 블록 ##########
 	/** 현재 Attack 입력을 초기화 */
 	void ResetAttackInput();
 
-	/** IJoustAttackInput을(를) 통해 상속됨 */
-	FVector2D GetAttackPoint() const override;
-	EJoustAttackType GetAttackType() const override;
-	bool IsAttackConfirmed() const override;
-
 	/** 현재 방패 중심위치를 저장 */
 	void SetShieldPoint(const FVector2D& InShieldPoint);
 
@@ -68,10 +64,29 @@ public: // ########### public 함수 블록 ##########
 	/** 현재 Defense입력을 초기화 */
 	void ResetDefenseInput();
 
-	/** IJoustDefenseInput을(를) 통해 상속됨 */
+	/** Local UI에서 확정한 플레이어 공격 타입과 지점을 서버에 제출 요청 */
+	void RequestAttack(EJoustAttackType InAttackType, const FVector2D& InAttackPoint);
+
+	// ====================
+	// IJoustRandomProvider 상속됨
+	// ====================
+	bool TryGetSelectedStrategyCardID(FName& OutCardID) const override;
+	bool TryGetBannedStrategyCardID(FName& OutCardID) const override;
+
+	// ====================
+	// IJoustAttackInput 상속됨
+	// ====================
+	FVector2D GetAttackPoint() const override;
+	EJoustAttackType GetAttackType() const override;
+	bool IsAttackConfirmed() const override;
+
+	// ====================
+	// IJoustDefenseInput 상속됨
+	// ====================
 	FVector2D GetShieldPoint() const override;
 	bool IsParryAttempted() const override;
 	float GetParryInputTime() const override;
+
 
 protected: // ########### protected 함수 블록
 
@@ -92,7 +107,16 @@ private: // ########## private 함수 블록 ##########
 	/** 서버에서 Strategy 카드 봉인 요청 처리 */
 	void HandleStrategyBanRequest(FName InCardID);
 
-private: // ########### private 변수 블록 ##########
+	/** 서버에서 플레이어 Attack 요청을 GameMode에 전달 */
+	void HandleAttackRequest(EJoustAttackType InAttackType, const FVector2D& InAttackPoint);
+
+	/** 확정한 플레이어 Attack 입력을 서버로 전달 */
+	UFUNCTION(Server, Reliable)
+	void ServerRequestAttack(EJoustAttackType InAttackType, FVector2D InAttackPoint);
+
+	/** 소유 클라이언트에 공격 요청 처리 결과 전달 */
+	UFUNCTION(Client, Reliable)
+	void ClientAttackRequestCompleted(bool bInAccepted);
 
 	/** 서버에서 실제 경기 시작 요청 처리 */
 	void HandleStartMatchRequest();
@@ -101,24 +125,42 @@ private: // ########### private 변수 블록 ##########
 	UFUNCTION(Server, Reliable)
 	void ServerRequestStartMatch();
 
+private: // ########### private 변수 블록 ##########
+
+	/** 현재 선택한 전략 카드 ID */
 	FName SelectedStrategyCardID = NAME_None;
 
+	/** 현재 선택한 봉인 대상 전략 카드 ID */
 	FName BannedStrategyCardID = NAME_None;
 
+	/** 전략 카드 선택 완료 여부 */
 	bool bHasSelectedStrategyCardID = false;
 
+	/** 봉인 대상 전략 카드 선택 완료 여부 */
 	bool bHasBannedStrategyCardID = false;
 
+	/** 현재 선택한 공격 지점 */
 	FVector2D AttackPoint = FVector2D::ZeroVector;
 
-	EJoustAttackType AttackType =
-		EJoustAttackType::Normal;
+	/** 현재 선택한 공격 종류 */
+	EJoustAttackType AttackType = EJoustAttackType::Normal;
 
+	/** 현재 공격 입력 확정 여부 */
 	bool bAttackConfirmed = false;
 
+	/** 현재 선택한 방패 중심 위치 */
 	FVector2D ShieldPoint = FVector2D::ZeroVector;
 
+	/** 현재 라운드에서 패링을 시도했는지 */
 	bool bParryAttempted = false;
 
+	/** 현재 라운드의 패링 입력 시간 */
 	float ParryInputTime = 0.0f;
+
+	/** FOnAttackRequestCompleted 이벤트용 */
+	FOnAttackRequestCompleted AttackRequestCompletedEvent;
+
+	public: // ########## GET SET 블록 ##########
+
+		FORCEINLINE FOnAttackRequestCompleted& OnAttackRequestCompleted() { return AttackRequestCompletedEvent; }
 };

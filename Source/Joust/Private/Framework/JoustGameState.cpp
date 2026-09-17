@@ -47,7 +47,7 @@ void AJoustGameState::SetScores(int32 InPlayerAScore, int32 InPlayerBScore)
 	PlayerAScore = InPlayerAScore;
 	PlayerBScore = InPlayerBScore;
 
-	MatchResultChangedEvent.Broadcast();
+	MatchStateChangedEvent.Broadcast();
 }
 
 void AJoustGameState::SetPublicStrategyCardIDs(const TArray<FName>& InCardIDs)
