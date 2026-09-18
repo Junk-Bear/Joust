@@ -16,7 +16,6 @@ class UJoustAttackWidget;
 class UJoustDefenseWidget;
 class UJoustRoundResultWidget;
 class UJoustMatchResultWidget;
-class UJoustStrategyWidget;
 
 /**
  * Joust Root HUD Widget의 C++ 기반 클래스
@@ -46,6 +45,8 @@ public: // ########### GET SET 블록 ##########
 	FORCEINLINE UJoustStrategyWidget* GetStrategyWidget() const { return WBP_JoustStrategy; }
 
 	FORCEINLINE UJoustAttackWidget* GetAttackWidget() const { return WBP_JoustAttack; }
+
+	FORCEINLINE UJoustDefenseWidget* GetDefenseWidget() const { return WBP_JoustDefense; }
 
 private: // ########## Bind Widget 블록 ##########
 

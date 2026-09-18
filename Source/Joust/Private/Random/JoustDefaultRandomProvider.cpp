@@ -18,10 +18,7 @@ float UJoustDefaultRandomProvider::GetRandom(float InMin, float InMax)
 	return RandomStream.FRandRange(InMin, InMax);
 }
 
-FVector2D UJoustDefaultRandomProvider::GetRandom(FVector2D& InMin, FVector2D& InMax)
+FVector2D UJoustDefaultRandomProvider::GetRandom(const FVector2D& InMin, const FVector2D& InMax)
 {
-	return FVector2D(
-		RandomStream.FRandRange(InMin.X, InMax.X), 
-		RandomStream.FRandRange(InMin.Y, InMax.Y)
-	);
+	return FVector2D(RandomStream.FRandRange(InMin.X, InMax.X), RandomStream.FRandRange(InMin.Y, InMax.Y));
 }

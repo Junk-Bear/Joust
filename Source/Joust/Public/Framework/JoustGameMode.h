@@ -48,6 +48,9 @@ public: // ########## public 함수 블록 ##########
 	/** Player의 Attack 입력을 서버에서 검증하고 제출 */
 	bool SubmitPlayerAttack(AJoustPlayerController* InRequestingController, EJoustAttackType InAttackType, const FVector2D& InAttackPoint);
 
+	/** Player의 Defense 입력을 서버에서 검증하고 제출 */
+	bool SubmitPlayerDefense(AJoustPlayerController* InRequestingController, const FVector2D& InShieldPoint, bool bInParryAttempted, float InParryInputTime);
+
 protected: // ########## protected 함수 블록 ##########
 
 	/** GameState 생성 후 경기 코어 초기화 */

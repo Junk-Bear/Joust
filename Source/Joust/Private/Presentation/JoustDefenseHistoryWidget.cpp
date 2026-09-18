@@ -129,14 +129,12 @@ void UJoustDefenseHistoryWidget::AddMarker(
 		return;
 
 	UOverlay* MarkerOverlayPtr = WidgetTree->ConstructWidget<UOverlay>();
-
 	if (!IsValid(MarkerOverlayPtr))
 		return;
 
 	MarkerOverlayPtr->SetVisibility(ESlateVisibility::HitTestInvisible);
 
 	UCanvasPanelSlot* CanvasSlotPtr = Canvas_Markers->AddChildToCanvas(MarkerOverlayPtr);
-
 	if (!IsValid(CanvasSlotPtr))
 		return;
 
@@ -150,7 +148,6 @@ void UJoustDefenseHistoryWidget::AddMarker(
 
 	UTextBlock* MarkerShapeTextPtr = WidgetTree->ConstructWidget<UTextBlock>();
 	UTextBlock* MarkerValueTextPtr = WidgetTree->ConstructWidget<UTextBlock>();
-
 	if (!IsValid(MarkerShapeTextPtr) || !IsValid(MarkerValueTextPtr))
 		return;
 
@@ -208,7 +205,6 @@ void UJoustDefenseHistoryWidget::AddOverlapDescription(const FString& InDescript
 		return;
 
 	UTextBlock* DescriptionTextPtr = WidgetTree->ConstructWidget<UTextBlock>();
-
 	if (!IsValid(DescriptionTextPtr))
 		return;
 

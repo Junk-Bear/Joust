@@ -33,7 +33,6 @@ namespace Joust::Private
 		Result.ScoreDelta = FJoustScoreResolver::Resolve(Result.DefenseResult);
 
 		const UJoustAttackTypeDataAsset* AttackTypeDataPtr = InRuleSet.AttackTypeSettings.FindRef(InAttackData.AttackType).Get();
-
 		if (!ensureMsgf(IsValid(AttackTypeDataPtr), TEXT("Missing AttackType")))
 		{
 			return Result;

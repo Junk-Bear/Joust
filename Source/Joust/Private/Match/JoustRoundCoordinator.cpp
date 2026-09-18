@@ -27,6 +27,20 @@ void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinat
 		PhaseCoordinator->OnPhaseEnded().RemoveAll(this);
 	}
 
+	if (IsValid(AToBPredictionController))
+	{
+		AToBPredictionController->OnPredictionStateUpdated().RemoveAll(this);
+		AToBPredictionController->OnPlaybackCompleted().RemoveAll(this);
+		AToBPredictionController->StopPlayback();
+	}
+
+	if (IsValid(BToAPredictionController))
+	{
+		BToAPredictionController->OnPredictionStateUpdated().RemoveAll(this);
+		BToAPredictionController->OnPlaybackCompleted().RemoveAll(this);
+		BToAPredictionController->StopPlayback();
+	}
+
 	PhaseCoordinator = InPhaseCoordinator;
 	RuleSet = InRuleSet;
 	RandomProvider = &InRandomProvider;
@@ -67,12 +81,12 @@ void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinat
 
 	BToAPredictionService = NewObject<UJoustPredictionService>(this);
 
-	if (AToBPredictionService)
+	if (IsValid(AToBPredictionService))
 	{
 		AToBPredictionService->Initialize(RuleSet, RandomProvider);
 	}
 
-	if (BToAPredictionService)
+	if (IsValid(BToAPredictionService))
 	{
 		BToAPredictionService->Initialize(RuleSet, RandomProvider);
 	}
@@ -85,15 +99,22 @@ void UJoustRoundCoordinator::Initialize(UJoustPhaseCoordinator* InPhaseCoordinat
 	{
 		AToBPredictionController->Initialize();
 
+		AToBPredictionController->OnPredictionStateUpdated().AddUObject(this, &UJoustRoundCoordinator::SyncPredictionPublicState);
+
 		AToBPredictionController->OnPlaybackCompleted().AddUObject(this, &UJoustRoundCoordinator::HandlePredictionPlaybackCompleted);
+
 	}
 
 	if (IsValid(BToAPredictionController))
 	{
 		BToAPredictionController->Initialize();
 
+		BToAPredictionController->OnPredictionStateUpdated().AddUObject(this, &UJoustRoundCoordinator::SyncPredictionPublicState);
+
 		BToAPredictionController->OnPlaybackCompleted().AddUObject(this, &UJoustRoundCoordinator::HandlePredictionPlaybackCompleted);
 	}
+
+	
 }
 
 bool UJoustRoundCoordinator::StartRound(int32 InRoundNumber)
@@ -115,7 +136,6 @@ bool UJoustRoundCoordinator::StartRound(int32 InRoundNumber)
 
 	AJoustPlayerState* PlayerAStatePtr = PlayerAState.Get();
 	AJoustPlayerState* PlayerBStatePtr = PlayerBState.Get();
-
 	if (!IsValid(PlayerAStatePtr) || !IsValid(PlayerBStatePtr))
 		return false;
 
@@ -133,7 +153,8 @@ bool UJoustRoundCoordinator::StartRound(int32 InRoundNumber)
 	PlayerAStatePtr->SetHasBanRight(false);
 	PlayerBStatePtr->SetHasBanRight(false);
 
-	if (AJoustGameState* GameStatePtr = GameState.Get())
+	AJoustGameState* GameStatePtr = GameState.Get();
+	if (IsValid(GameStatePtr))
 	{
 		GameStatePtr->ClearStrategyState();
 
@@ -272,7 +293,6 @@ bool UJoustRoundCoordinator::ResolveRound()
 	AJoustPlayerState* PlayerBStatePtr = PlayerBState.Get();
 
 	UJoustMatchCoordinator* MatchCoordinatorPtr = MatchCoordinator.Get();
-
 	if (!IsValid(PlayerAStatePtr) || !IsValid(PlayerBStatePtr) || !IsValid(MatchCoordinatorPtr))
 		return false;
 	
@@ -365,7 +385,6 @@ bool UJoustRoundCoordinator::CompleteRoundResultPhase()
 
 
 	UJoustMatchCoordinator* MatchCoordinatorPtr = MatchCoordinator.Get();
-
 	if (!IsValid(MatchCoordinatorPtr))
 		return false;
 
@@ -541,7 +560,6 @@ void UJoustRoundCoordinator::ApplyRoundResultToPlayerStates(
 void UJoustRoundCoordinator::SyncPhasePublicState()
 {
 	AJoustGameState* GameStatePtr = GameState.Get();
-
 	if (!IsValid(GameStatePtr) || !IsValid(PhaseCoordinator))
 		return;
 	
@@ -551,7 +569,6 @@ void UJoustRoundCoordinator::SyncPhasePublicState()
 void UJoustRoundCoordinator::SyncStrategyPublicCards()
 {
 	AJoustGameState* GameStatePtr = GameState.Get();
-
 	if (!IsValid(GameStatePtr) || !IsValid(StrategyService))
 		return;
 	
@@ -578,7 +595,7 @@ bool UJoustRoundCoordinator::SubmitDefaultStrategySelection(bool bInPlayerA)
 	if (StrategyService->IsPlayerComplete(bInPlayerA))
 		return true;
 
-	TArray<TObjectPtr<UJoustStrategyCardDataAsset>> SelectableCards;
+	TArray<UJoustStrategyCardDataAsset*> SelectableCards;
 
 	if (!StrategyService->GetSelectableCards(bInPlayerA, SelectableCards))
 		return false;
@@ -601,7 +618,6 @@ bool UJoustRoundCoordinator::SubmitDefaultAttack(bool bInPlayerA)
 		return true;
 
 	AJoustPlayerState* PlayerStatePtr = bInPlayerA ? PlayerAState.Get() : PlayerBState.Get();
-
 	if (!IsValid(PlayerStatePtr))
 		return false;
 
@@ -632,6 +648,28 @@ bool UJoustRoundCoordinator::SubmitDefaultAttack(bool bInPlayerA)
 	return false;
 }
 
+void UJoustRoundCoordinator::SyncPredictionPublicState()
+{
+	AJoustGameState* GameStatePtr = GameState.Get();
+	if (!IsValid(GameStatePtr))
+		return;
+
+	FJoustPredictionState PlayerAPredictionState;
+	FJoustPredictionState PlayerBPredictionState;
+
+	if (IsValid(BToAPredictionController))
+	{
+		BToAPredictionController->BuildPredictionState(PlayerAPredictionState);
+	}
+
+	if (IsValid(AToBPredictionController))
+	{
+		AToBPredictionController->BuildPredictionState(PlayerBPredictionState);
+	}
+
+	GameStatePtr->SetPredictionStates(PlayerAPredictionState, PlayerBPredictionState);
+}
+
 bool UJoustRoundCoordinator::SubmitStrategyBan(bool bInPlayerA, const IJoustStrategyInput& InStrategyInput)
 {
 	if (!bRoundActive || FlowState != ERoundFlowState::Strategy || !IsValid(StrategyService))
@@ -646,7 +684,6 @@ bool UJoustRoundCoordinator::SubmitStrategyBan(bool bInPlayerA, const IJoustStra
 		return false;
 
 	AJoustGameState* GameStatePtr = GameState.Get();
-	
 	if (IsValid(GameStatePtr))
 	{
 		GameStatePtr->ApplyStrategyBan(!bInPlayerA, CardID);
@@ -691,7 +728,6 @@ bool UJoustRoundCoordinator::SubmitAttack(bool bInPlayerA, const IJoustAttackInp
 		return false;
 
 	AJoustPlayerState* PlayerStatePtr = bInPlayerA ? PlayerAState.Get() : PlayerBState.Get();
-
 	if (!IsValid(PlayerStatePtr))
 		return false;
 
@@ -814,13 +850,12 @@ bool UJoustRoundCoordinator::GetDefensePredictionState(bool bInPlayerA, FJoustPr
 	OutState = FJoustPredictionState{};
 
 	const UJoustPredictionSeriesController* PredictionControllerPtr = bInPlayerA ? BToAPredictionController.Get() : AToBPredictionController.Get();
-
 	if (!IsValid(PredictionControllerPtr))
 		return false;
 
 	PredictionControllerPtr->BuildPredictionState(OutState);
 
-	return OutState.bIsPredictionVisible && !OutState.DisplayCircles.IsEmpty();
+	return (OutState.bIsPredictionVisible && !OutState.DisplayCircles.IsEmpty()) || OutState.bIsAttackPointRevealed;
 }
 
 void UJoustRoundCoordinator::SetMatchCoordinator(UJoustMatchCoordinator* InMatchCoordinator)
@@ -831,6 +866,8 @@ void UJoustRoundCoordinator::SetMatchCoordinator(UJoustMatchCoordinator* InMatch
 void UJoustRoundCoordinator::SetGameState(AJoustGameState* InGameState)
 {
 	GameState = InGameState;
+
+	SyncPredictionPublicState();
 }
 
 void UJoustRoundCoordinator::BeginDestroy()
@@ -842,6 +879,7 @@ void UJoustRoundCoordinator::BeginDestroy()
 
 	if (IsValid(AToBPredictionController))
 	{
+		AToBPredictionController->OnPredictionStateUpdated().RemoveAll(this);
 		AToBPredictionController->OnPlaybackCompleted().RemoveAll(this);
 
 		AToBPredictionController->StopPlayback();
@@ -849,6 +887,7 @@ void UJoustRoundCoordinator::BeginDestroy()
 
 	if (IsValid(BToAPredictionController))
 	{
+		BToAPredictionController->OnPredictionStateUpdated().RemoveAll(this);
 		BToAPredictionController->OnPlaybackCompleted().RemoveAll(this);
 
 		BToAPredictionController->StopPlayback();
@@ -902,7 +941,6 @@ void UJoustRoundCoordinator::HandlePhaseEnded(EJoustPhase InEndedPhase)
 
 		AJoustPlayerState* PlayerAStatePtr = PlayerAState.Get();
 		AJoustPlayerState* PlayerBStatePtr = PlayerBState.Get();
-
 		if (!IsValid(PlayerAStatePtr) || !IsValid(PlayerBStatePtr))
 			break;
 
@@ -956,7 +994,6 @@ void UJoustRoundCoordinator::HandlePhaseEnded(EJoustPhase InEndedPhase)
 
 		AJoustPlayerState* PlayerAStatePtr = PlayerAState.Get();
 		AJoustPlayerState* PlayerBStatePtr = PlayerBState.Get();
-
 		if (!IsValid(PlayerAStatePtr) || !IsValid(PlayerBStatePtr))
 			break;
 
@@ -1020,6 +1057,12 @@ void UJoustRoundCoordinator::ResetRoundData()
 	BToAImpactTime = 0.0f;
 
 	CurrentRoundResult = FJoustRoundResult{};
+
+	AJoustGameState* GameStatePtr = GameState.Get();
+	if (IsValid(GameStatePtr))
+	{
+		GameStatePtr->ClearPredictionStates();
+	}
 }
 
 void UJoustRoundCoordinator::HandlePredictionPlaybackCompleted()
@@ -1044,7 +1087,6 @@ bool UJoustRoundCoordinator::SyncAttackUsageStates()
 	AJoustPlayerState* PlayerAStatePtr = PlayerAState.Get();
 
 	AJoustPlayerState* PlayerBStatePtr = PlayerBState.Get();
-
 	if (!IsValid(PlayerAStatePtr) || !IsValid(PlayerBStatePtr))
 		return false;
 	

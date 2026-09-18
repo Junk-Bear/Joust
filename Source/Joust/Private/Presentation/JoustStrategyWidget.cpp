@@ -21,14 +21,13 @@ void UJoustStrategyWidget::SetStrategyCards(const TArray<FName>& InCardIDs, cons
 		UTextBlock* CardEffectTextPtr = CardEffectTexts[i];
 
 		const UJoustStrategyCardDataAsset* CardDataPtr = nullptr;
-
 		if (IsValid(InRuleSet) && InCardIDs.IsValidIndex(i) && !InCardIDs[i].IsNone())
 		{
-			for (const TObjectPtr<UJoustStrategyCardDataAsset>& Item : InRuleSet->StrategyCardPool)
+			for (const UJoustStrategyCardDataAsset* Item : InRuleSet->StrategyCardPool)
 			{
 				if (IsValid(Item) && Item->CardID == InCardIDs[i])
 				{
-					CardDataPtr = Item.Get();
+					CardDataPtr = Item;
 
 					break;
 				}
@@ -56,10 +55,6 @@ void UJoustStrategyWidget::SetStrategyCards(const TArray<FName>& InCardIDs, cons
 	}
 
 	ResetCardSelection();
-
-	CloseHistoryPopups();
-
-	RefreshInteractionState();
 }
 
 void UJoustStrategyWidget::ResetCardSelection()
@@ -73,6 +68,8 @@ void UJoustStrategyWidget::ResetCardSelection()
 
 void UJoustStrategyWidget::SetStrategyInteractionState(bool bInLocalBanPending, bool bInAnyBanPending, FName InBannedCardIDForPlayer)
 {
+	const EJoustStrategyInteractionMode PreviousInteractionMode = InteractionMode;
+
 	BannedCardIDForPlayer = InBannedCardIDForPlayer;
 
 	if (bInLocalBanPending)
@@ -88,12 +85,14 @@ void UJoustStrategyWidget::SetStrategyInteractionState(bool bInLocalBanPending, 
 		InteractionMode = EJoustStrategyInteractionMode::Selection;
 	}
 
-	ResetCardSelection();
-
-	if (InteractionMode != EJoustStrategyInteractionMode::Selection)
+	if (InteractionMode != PreviousInteractionMode)
 	{
+		ResetCardSelection();
+
 		CloseHistoryPopups();
 	}
+
+
 
 	RefreshInteractionState();
 }
@@ -109,6 +108,13 @@ void UJoustStrategyWidget::SetHistoryData(const TArray<FJoustAttackHistory>& InA
 	{
 		WBP_JoustDefenseHistory->SetHistory(InDefenseHistory, InLanceBoxMin, InLanceBoxMax);
 	}
+}
+
+void UJoustStrategyWidget::ResetStrategyScreen()
+{
+	ResetCardSelection();
+
+	CloseHistoryPopups();
 }
 
 void UJoustStrategyWidget::NativeOnInitialized()
@@ -211,7 +217,6 @@ void UJoustStrategyWidget::UpdateCardSelectionVisuals()
 	for (int32 i = 0; i < CardButtons.Num(); ++i)
 	{
 		UButton* CardButtonPtr = CardButtons[i];
-
 		if (!IsValid(CardButtonPtr))
 			continue;
 

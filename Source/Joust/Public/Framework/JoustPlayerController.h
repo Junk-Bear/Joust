@@ -14,7 +14,7 @@
  * 플레이어의 Strategy / Attack / Defense 입력 제공
  */
 UCLASS()
-class JOUST_API AJoustPlayerController : public APlayerController, public IJoustAttackInput, public IJoustDefenseInput, public IJoustStrategyInput
+class JOUST_API AJoustPlayerController : public APlayerController, public IJoustStrategyInput, public IJoustAttackInput, public IJoustDefenseInput
 {
 	GENERATED_BODY()
 
@@ -67,8 +67,14 @@ public: // ########### public 함수 블록 ##########
 	/** Local UI에서 확정한 플레이어 공격 타입과 지점을 서버에 제출 요청 */
 	void RequestAttack(EJoustAttackType InAttackType, const FVector2D& InAttackPoint);
 
+	/** Local UI의 방패 위치를 서버에 제출 요청 */
+	void RequestShieldPoint(const FVector2D& InShieldPoint);
+
+	/** Local UI의 패링 입력을 서버에 제출 요청 */
+	void RequestParry(const FVector2D& InShieldPoint, float InParryInputTime);
+
 	// ====================
-	// IJoustRandomProvider 상속됨
+	// IJoustStrategyInput 상속됨
 	// ====================
 	bool TryGetSelectedStrategyCardID(FName& OutCardID) const override;
 	bool TryGetBannedStrategyCardID(FName& OutCardID) const override;
@@ -125,6 +131,17 @@ private: // ########## private 함수 블록 ##########
 	UFUNCTION(Server, Reliable)
 	void ServerRequestStartMatch();
 
+	/** 서버에서 Player의 Defense 입력 처리 */
+	void HandleDefenseRequest(const FVector2D& InShieldPoint, bool bInParryAttempted, float InParryInputTime);
+
+	/** 변경된 방패 위치를 서버에 전달 */
+	UFUNCTION(Server, Unreliable)
+	void ServerRequestShieldPoint(FVector2D InShieldPoint);
+
+	/** 패링 위치와 입력 시간을 서버에 전달 */
+	UFUNCTION(Server, Reliable)
+	void ServerRequestParry(FVector2D InShieldPoint, float InParryInputTime);
+
 private: // ########### private 변수 블록 ##########
 
 	/** 현재 선택한 전략 카드 ID */
@@ -160,7 +177,7 @@ private: // ########### private 변수 블록 ##########
 	/** FOnAttackRequestCompleted 이벤트용 */
 	FOnAttackRequestCompleted AttackRequestCompletedEvent;
 
-	public: // ########## GET SET 블록 ##########
+public: // ########## GET SET 블록 ##########
 
 		FORCEINLINE FOnAttackRequestCompleted& OnAttackRequestCompleted() { return AttackRequestCompletedEvent; }
 };

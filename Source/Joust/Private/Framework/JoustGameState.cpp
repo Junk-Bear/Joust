@@ -17,8 +17,15 @@ void AJoustGameState::ResetMatchState()
 	PlayerBScore = 0;
 
 	PublicStrategyCardIDs.Reset();
+
 	BannedCardIDForPlayerA = NAME_None;
 	BannedCardIDForPlayerB = NAME_None;
+
+	bPlayerAStrategyBanPending = false;
+	bPlayerBStrategyBanPending = false;
+
+	PlayerAPredictionState = FJoustPredictionState{};
+	PlayerBPredictionState = FJoustPredictionState{};
 
 	LastRoundResult = FJoustRoundResult{};
 	
@@ -29,6 +36,7 @@ void AJoustGameState::ResetMatchState()
 	MatchStateChangedEvent.Broadcast();
 	PhaseStateChangedEvent.Broadcast();
 	StrategyStateChangedEvent.Broadcast();
+	PredictionStateChangedEvent.Broadcast();
 	RoundResultChangedEvent.Broadcast();
 	MatchResultChangedEvent.Broadcast();
 }
@@ -135,6 +143,22 @@ void AJoustGameState::ApplyStrategyBan(bool bInBanningPlayerA, FName InCardID)
 	StrategyStateChangedEvent.Broadcast();
 }
 
+void AJoustGameState::SetPredictionStates(const FJoustPredictionState& InPlayerAPredictionState, const FJoustPredictionState& InPlayerBPredictionState)
+{
+	PlayerAPredictionState = InPlayerAPredictionState;
+	PlayerBPredictionState = InPlayerBPredictionState;
+
+	PredictionStateChangedEvent.Broadcast();
+}
+
+void AJoustGameState::ClearPredictionStates()
+{
+	PlayerAPredictionState = FJoustPredictionState{};
+	PlayerBPredictionState = FJoustPredictionState{};
+
+	PredictionStateChangedEvent.Broadcast();
+}
+
 void AJoustGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -170,6 +194,10 @@ void AJoustGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(AJoustGameState, bPlayerAStrategyBanPending);
 
 	DOREPLIFETIME(AJoustGameState, bPlayerBStrategyBanPending);
+
+	DOREPLIFETIME(AJoustGameState, PlayerAPredictionState);
+
+	DOREPLIFETIME(AJoustGameState, PlayerBPredictionState);
 }
 
 void AJoustGameState::OnRep_MatchState()
@@ -195,4 +223,9 @@ void AJoustGameState::OnRep_RoundResult()
 void AJoustGameState::OnRep_MatchResult()
 {
 	MatchResultChangedEvent.Broadcast();
+}
+
+void AJoustGameState::OnRep_PredictionState()
+{
+	PredictionStateChangedEvent.Broadcast();
 }

@@ -6,6 +6,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "Common/JoustCommonTypes.h"
 #include "Result/JoustResultTypes.h"
+#include "Prediction/JoustPredictionTypes.h"
 #include "JoustGameState.generated.h"
 
 class UJoustRuleSetDataAsset;
@@ -35,6 +36,9 @@ public: // ########## 델리게이트 블록 ##########
 
 	/** 최종 MatchResult 변경을 알리는 이벤트 */
 	DECLARE_EVENT(AJoustGameState, FOnMatchResultChanged);
+
+	/** 공개 Prediction 표시 상태 변경 이벤트 */
+	DECLARE_EVENT(AJoustGameState, FOnPredictionStateChanged);
 
 public: // ########## public 함수 블록 ##########
 
@@ -74,6 +78,12 @@ public: // ########## public 함수 블록 ##########
 	/** 확정된 봉인 결과를 적용하고 봉인한 플레이어의 대기 상태 종료 */
 	void ApplyStrategyBan(bool bInBanningPlayerA, FName InCardID);
 
+	/** Player A/B가 방어할 때 표시할 공개 Prediction 상태 설정 */
+	void SetPredictionStates(const FJoustPredictionState& InPlayerAPredictionState, const FJoustPredictionState& InPlayerBPredictionState);
+
+	/** 현재 공개 Prediction 상태 초기화 */
+	void ClearPredictionStates();
+
 protected: // ########## protected 함수 블록 ##########
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -98,6 +108,10 @@ protected: // ########## protected 함수 블록 ##########
 	UFUNCTION()
 	void OnRep_MatchResult();
 
+	/** 공개 Prediction 표시 상태가 복제됐을 때 호출 */
+	UFUNCTION()
+	void OnRep_PredictionState();
+
 private: // ########## private 변수 블록 ##########
 
 	/** 현재 경기 라운드 번호 */
@@ -110,7 +124,7 @@ private: // ########## private 변수 블록 ##########
 
 	/**
 	 * 현재 Phase의 서버 World Time 기준 종료 시각
-	 * Non-Timed Phase에서는 시작/종료 시각이 동일하다
+	 * Non-Timed Phase에서는 시작/종료 시각이 동일
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_PhaseState, Category = "Joust|Match", meta = (AllowPrivateAccess = "true"))
 	float PhaseEndTime = 0.0f;
@@ -180,6 +194,17 @@ private: // ########## private 변수 블록 ##########
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_StrategyState, Category = "Joust|Strategy", meta = (AllowPrivateAccess = "true"))
 	bool bPlayerBStrategyBanPending = false;
 
+	/** Player A가 방어할 때 표시할 공개 Prediction 상태 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_PredictionState, Category = "Joust|Prediction", meta = (AllowPrivateAccess = "true"))
+	FJoustPredictionState PlayerAPredictionState;
+
+	/** Player B가 방어할 때 표시할 공개 Prediction 상태 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_PredictionState, Category = "Joust|Prediction", meta = (AllowPrivateAccess = "true"))
+	FJoustPredictionState PlayerBPredictionState;
+
+	/** FOnPredictionStateChanged 이벤트용 */
+	FOnPredictionStateChanged PredictionStateChangedEvent;
+
 public: // ########## GET SET 블록 ##########
 
 	FORCEINLINE int32 GetCurrentRoundNumber() const { return CurrentRoundNumber; }
@@ -223,4 +248,10 @@ public: // ########## GET SET 블록 ##########
 	FORCEINLINE bool IsPlayerAStrategyBanPending() const { return bPlayerAStrategyBanPending; }
 
 	FORCEINLINE bool IsPlayerBStrategyBanPending() const { return bPlayerBStrategyBanPending; }
+
+	FORCEINLINE const FJoustPredictionState& GetPlayerAPredictionState() const { return PlayerAPredictionState; }
+
+	FORCEINLINE const FJoustPredictionState& GetPlayerBPredictionState() const { return PlayerBPredictionState; }
+
+	FORCEINLINE FOnPredictionStateChanged& OnPredictionStateChanged() { return PredictionStateChangedEvent; }
 };

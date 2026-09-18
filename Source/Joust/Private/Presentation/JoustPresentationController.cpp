@@ -12,6 +12,7 @@
 #include "Presentation/JoustStrategyWidget.h"
 #include "Rules/JoustRuleSetDataAsset.h"
 #include "Presentation/JoustAttackWidget.h"
+#include "Presentation/JoustDefenseWidget.h"
 
 bool UJoustPresentationController::Initialize(AJoustPlayerController* InPlayerController, AJoustHUD* InHUD, UJoustHUDWidget* InRootWidget)
 {
@@ -19,12 +20,10 @@ bool UJoustPresentationController::Initialize(AJoustPlayerController* InPlayerCo
 		return false;
 	
 	UWorld* WorldPtr = InPlayerController->GetWorld();
-
 	if (!IsValid(WorldPtr))
 		return false;
 
 	AJoustGameState* JoustGameStatePtr = WorldPtr->GetGameState<AJoustGameState>();
-
 	if (!IsValid(JoustGameStatePtr))
 		return false;
 
@@ -40,10 +39,13 @@ bool UJoustPresentationController::Initialize(AJoustPlayerController* InPlayerCo
 	BindGameStateEvents();
 	BindWidgetEvents();
 
+	LastInitializedRoundNumber = INDEX_NONE;
+
+	bHasInitializedPhase = false;
+
 	RefreshCommonHUD();
 	RefreshCurrentScreen();
-	RefreshStrategyScreen();
-	RefreshAttackScreen();
+	RefreshPhaseEntry();
 
 	LastDisplayedRemainingSeconds = INDEX_NONE;
 	UpdateRemainingTime();
@@ -55,7 +57,6 @@ bool UJoustPresentationController::Initialize(AJoustPlayerController* InPlayerCo
 AJoustPlayerState* UJoustPresentationController::GetPlayerState() const
 {
 	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
-
 	if (!IsValid(PlayerControllerPtr))
 		return nullptr;
 	
@@ -79,7 +80,6 @@ void UJoustPresentationController::BeginDestroy()
 void UJoustPresentationController::BindGameStateEvents()
 {
 	AJoustGameState* GameStatePtr = GameState.Get();
-
 	if (!IsValid(GameStatePtr))
 		return;
 
@@ -88,6 +88,8 @@ void UJoustPresentationController::BindGameStateEvents()
 	GameStatePtr->OnRoundResultChanged().AddUObject(this, &UJoustPresentationController::HandleRoundResultChanged);
 	GameStatePtr->OnMatchResultChanged().AddUObject(this, &UJoustPresentationController::HandleMatchResultChanged);
 	GameStatePtr->OnStrategyStateChanged().AddUObject(this, &UJoustPresentationController::HandleStrategyStateChanged);
+	GameStatePtr->OnStrategyStateChanged().AddUObject(this, &UJoustPresentationController::HandleStrategyStateChanged);
+	GameStatePtr->OnPredictionStateChanged().AddUObject(this, &UJoustPresentationController::HandlePredictionStateChanged);
 }
 
 void UJoustPresentationController::UnbindGameStateEvents()
@@ -102,6 +104,8 @@ void UJoustPresentationController::UnbindGameStateEvents()
 	GameStatePtr->OnRoundResultChanged().RemoveAll(this);
 	GameStatePtr->OnMatchResultChanged().RemoveAll(this);
 	GameStatePtr->OnStrategyStateChanged().RemoveAll(this);
+	GameStatePtr->OnStrategyStateChanged().RemoveAll(this);
+	GameStatePtr->OnPredictionStateChanged().RemoveAll(this);
 }
 
 void UJoustPresentationController::HandleMatchStateChanged()
@@ -110,7 +114,7 @@ void UJoustPresentationController::HandleMatchStateChanged()
 
 	RefreshCurrentScreen();
 
-	RefreshStrategyScreen();
+	RefreshPhaseEntry();
 }
 
 void UJoustPresentationController::HandlePhaseStateChanged()
@@ -119,26 +123,7 @@ void UJoustPresentationController::HandlePhaseStateChanged()
 
 	RefreshCurrentScreen();
 
-	AJoustGameState* GameStatePtr = GameState.Get();
-
-	if (IsValid(GameStatePtr))
-	{
-		switch(GameStatePtr->GetCurrentPhase())
-		{
-			case EJoustPhase::Strategy:
-				RefreshStrategyScreen();
-
-				break;
-
-			case EJoustPhase::Attack:
-				RefreshAttackScreen();
-
-				break;
-
-			default:
-				break;
-		}
-	}
+	RefreshPhaseEntry();
 
 	LastDisplayedRemainingSeconds = INDEX_NONE;
 
@@ -159,7 +144,6 @@ void UJoustPresentationController::RefreshCommonHUD()
 {
 	AJoustGameState* GameStatePtr = GameState.Get();
 	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
-
 	if (!IsValid(GameStatePtr) || !IsValid(RootWidgetPtr))
 		return;
 
@@ -175,7 +159,6 @@ void UJoustPresentationController::RefreshCurrentScreen()
 {
 	AJoustGameState* GameStatePtr = GameState.Get();
 	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
-
 	if (!IsValid(GameStatePtr) || !IsValid(RootWidgetPtr))
 		return;
 
@@ -219,12 +202,10 @@ void UJoustPresentationController::StartTimerUpdates()
 	StopTimerUpdates();
 
 	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
-
 	if (!IsValid(PlayerControllerPtr))
 		return;
 	
 	UWorld* WorldPtr = PlayerControllerPtr->GetWorld();
-
 	if (!IsValid(WorldPtr))
 		return;
 	
@@ -234,11 +215,9 @@ void UJoustPresentationController::StartTimerUpdates()
 void UJoustPresentationController::StopTimerUpdates()
 {
 	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
-
 	if (IsValid(PlayerControllerPtr))
 	{
 		UWorld* WorldPtr = PlayerControllerPtr->GetWorld();
-
 		if (IsValid(WorldPtr))
 		{
 			WorldPtr->GetTimerManager().ClearTimer(TimerUpdateHandle);
@@ -253,7 +232,6 @@ void UJoustPresentationController::UpdateRemainingTime()
 	AJoustGameState* GameStatePtr = GameState.Get();
 
 	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
-
 	if (!IsValid(GameStatePtr) || !IsValid(RootWidgetPtr))
 		return;
 	
@@ -286,6 +264,8 @@ void UJoustPresentationController::UpdateRemainingTime()
 
 void UJoustPresentationController::HandleStrategyStateChanged()
 {
+	RefreshPhaseEntry();
+
 	RefreshStrategyScreen();
 }
 
@@ -294,24 +274,20 @@ void UJoustPresentationController::RefreshStrategyScreen()
 	AJoustGameState* GameStatePtr = GameState.Get();
 
 	UJoustHUDWidget* HUDWidgetPtr = RootWidget.Get();
-
 	if (!IsValid(GameStatePtr) || !IsValid(HUDWidgetPtr))
 		return;
 
 	UJoustStrategyWidget* StrategyWidgetPtr = HUDWidgetPtr->GetStrategyWidget();
-
 	if (!IsValid(StrategyWidgetPtr))
 		return;
 
 	const UJoustRuleSetDataAsset* RuleSetPtr = GameStatePtr->GetRuleSet();
-
 	if (!IsValid(RuleSetPtr))
 		return;
 
 	StrategyWidgetPtr->SetStrategyCards(GameStatePtr->GetPublicStrategyCardIDs(), RuleSetPtr);
 
 	AJoustPlayerState* PlayerStatePtr = GetPlayerState();
-
 	if (!IsValid(PlayerStatePtr))
 		return;
 
@@ -348,7 +324,6 @@ void UJoustPresentationController::RefreshStrategyScreen()
 void UJoustPresentationController::HandleStrategyConfirmed(FName InCardID)
 {
 	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
-
 	if (!IsValid(PlayerControllerPtr))
 		return;
 
@@ -358,7 +333,6 @@ void UJoustPresentationController::HandleStrategyConfirmed(FName InCardID)
 void UJoustPresentationController::HandleStrategyBanConfirmed(FName InCardID)
 {
 	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
-
 	if (!IsValid(PlayerControllerPtr))
 		return;
 
@@ -370,31 +344,25 @@ void UJoustPresentationController::RefreshAttackScreen()
 	AJoustGameState* GameStatePtr = GameState.Get();
 	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
 	AJoustPlayerState* PlayerStatePtr = GetPlayerState();
-
 	if (!IsValid(GameStatePtr) || !IsValid(RootWidgetPtr) || !IsValid(PlayerStatePtr))
 		return;
 
 	UJoustAttackWidget* AttackWidgetPtr = RootWidgetPtr->GetAttackWidget();
-
 	if (!IsValid(AttackWidgetPtr))
 		return;
 
 	const UJoustRuleSetDataAsset* RuleSetPtr = GameStatePtr->GetRuleSet();
-
 	if (!IsValid(RuleSetPtr))
 		return;
 
 	AttackWidgetPtr->SetAttackUsageStates(PlayerStatePtr->GetReplicatedAttackUsageStates());
 
 	AttackWidgetPtr->SetLanceBoxBounds(RuleSetPtr->LanceBoxMin, RuleSetPtr->LanceBoxMax);
-
-	AttackWidgetPtr->ResetAttackSelection();
 }
 
 void UJoustPresentationController::HandleAttackConfirmed(EJoustAttackType InAttackType, FVector2D InAttackPoint)
 {
 	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
-
 	if (!IsValid(PlayerControllerPtr))
 		return;
 
@@ -404,41 +372,122 @@ void UJoustPresentationController::HandleAttackConfirmed(EJoustAttackType InAtta
 void UJoustPresentationController::HandleAttackRequestCompleted(bool bInAccepted)
 {
 	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
-
 	if (!IsValid(RootWidgetPtr))
 		return;
 
 	UJoustAttackWidget* AttackWidgetPtr = RootWidgetPtr->GetAttackWidget();
-
 	if (!IsValid(AttackWidgetPtr))
 		return;
 
 	AttackWidgetPtr->SetAttackRequestResult(bInAccepted);
 }
 
+void UJoustPresentationController::RefreshPhaseEntry()
+{
+	AJoustGameState* GameStatePtr = GameState.Get();
+	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
+	if (!IsValid(GameStatePtr) || !IsValid(RootWidgetPtr))
+		return;
+
+	const int32 CurrentRoundNumber = GameStatePtr->GetCurrentRoundNumber();
+
+	if (CurrentRoundNumber <= 0)
+		return;
+
+	const EJoustPhase CurrentPhase = GameStatePtr->GetCurrentPhase();
+
+	if (
+		bHasInitializedPhase &&
+		LastInitializedRoundNumber == CurrentRoundNumber &&
+		LastInitializedPhase == CurrentPhase
+		)
+		return;
+
+	switch (CurrentPhase)
+	{
+	case EJoustPhase::Strategy:
+	{
+		AJoustPlayerState* PlayerStatePtr = GetPlayerState();
+		const UJoustRuleSetDataAsset* RuleSetPtr = GameStatePtr->GetRuleSet();
+		UJoustStrategyWidget* StrategyWidgetPtr = RootWidgetPtr->GetStrategyWidget();
+		if (!IsValid(PlayerStatePtr) || !IsValid(RuleSetPtr) || !IsValid(StrategyWidgetPtr))
+			return;
+
+		const bool bLocalPlayerA = PlayerStatePtr == GameStatePtr->GetPlayerAState();
+		const bool bLocalPlayerB = PlayerStatePtr == GameStatePtr->GetPlayerBState();
+
+		if (!bLocalPlayerA && !bLocalPlayerB)
+			return;
+
+		RefreshStrategyScreen();
+
+		StrategyWidgetPtr->ResetStrategyScreen();
+
+		break;
+	}
+
+	case EJoustPhase::Attack:
+	{
+		AJoustPlayerState* PlayerStatePtr = GetPlayerState();
+		const UJoustRuleSetDataAsset* RuleSetPtr = GameStatePtr->GetRuleSet();
+		UJoustAttackWidget* AttackWidgetPtr = RootWidgetPtr->GetAttackWidget();
+		if (!IsValid(PlayerStatePtr) || !IsValid(RuleSetPtr) || !IsValid(AttackWidgetPtr)			)
+			return;
+
+		RefreshAttackScreen();
+
+		AttackWidgetPtr->ResetAttackSelection();
+
+		break;
+	}
+
+	case EJoustPhase::Defense:
+	{
+		AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
+
+		UJoustDefenseWidget* DefenseWidgetPtr = RootWidgetPtr->GetDefenseWidget();
+		if (!IsValid(PlayerControllerPtr) || !IsValid(DefenseWidgetPtr))
+			return;
+
+		PlayerControllerPtr->ResetDefenseInput();
+
+		RefreshDefenseScreen();
+
+		DefenseWidgetPtr->ResetDefenseInput();
+
+		RefreshDefensePrediction();
+
+		break;
+	}
+
+	default:
+		break;
+	}
+
+	LastInitializedRoundNumber = CurrentRoundNumber;
+	LastInitializedPhase = CurrentPhase;
+	bHasInitializedPhase = true;
+}
+
 void UJoustPresentationController::BindWidgetEvents()
 {
 	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
-
 	if (!IsValid(RootWidgetPtr))
 		return;
 
 	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
-
 	if (IsValid(PlayerControllerPtr))
 	{
 		PlayerControllerPtr->OnAttackRequestCompleted().AddUObject(this, &UJoustPresentationController::HandleAttackRequestCompleted);
 	}
 
 	UJoustMatchStartWidget* MatchStartWidgetPtr = RootWidgetPtr->GetMatchStartWidget();
-
 	if (!IsValid(MatchStartWidgetPtr))
 		return;
 
 	MatchStartWidgetPtr->OnStartMatchRequested().AddUObject(this, &UJoustPresentationController::HandleStartMatchRequested);
 
 	UJoustStrategyWidget* StrategyWidgetPtr = RootWidgetPtr->GetStrategyWidget();
-
 	if (IsValid(StrategyWidgetPtr))
 	{
 		StrategyWidgetPtr->OnStrategyConfirmed().AddUObject(this, &UJoustPresentationController::HandleStrategyConfirmed);
@@ -447,36 +496,39 @@ void UJoustPresentationController::BindWidgetEvents()
 	}
 
 	UJoustAttackWidget* AttackWidgetPtr = RootWidgetPtr->GetAttackWidget();
-
 	if (IsValid(AttackWidgetPtr))
 	{
 		AttackWidgetPtr->OnAttackConfirmed().AddUObject(this, &UJoustPresentationController::HandleAttackConfirmed);
+	}
+
+	UJoustDefenseWidget* DefenseWidgetPtr = RootWidgetPtr->GetDefenseWidget();
+	if (IsValid(DefenseWidgetPtr))
+	{
+		DefenseWidgetPtr->OnShieldPointChanged().AddUObject(this, &UJoustPresentationController::HandleShieldPointChanged);
+
+		DefenseWidgetPtr->OnParryRequested().AddUObject(this, &UJoustPresentationController::HandleParryRequested);
 	}
 }
 
 void UJoustPresentationController::UnbindWidgetEvents()
 {
 	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
-
 	if (IsValid(PlayerControllerPtr))
 	{
 		PlayerControllerPtr->OnAttackRequestCompleted().RemoveAll(this);
 	}
 
 	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
-
 	if (!IsValid(RootWidgetPtr))
 		return;
 
 	UJoustMatchStartWidget* MatchStartWidgetPtr = RootWidgetPtr->GetMatchStartWidget();
-
 	if (IsValid(MatchStartWidgetPtr))
 	{
 		MatchStartWidgetPtr->OnStartMatchRequested().RemoveAll(this);
 	}
 
 	UJoustStrategyWidget* StrategyWidgetPtr = RootWidgetPtr->GetStrategyWidget();
-
 	if (IsValid(StrategyWidgetPtr))
 	{
 		StrategyWidgetPtr->OnStrategyConfirmed().RemoveAll(this);
@@ -485,17 +537,96 @@ void UJoustPresentationController::UnbindWidgetEvents()
 	}
 
 	UJoustAttackWidget* AttackWidgetPtr = RootWidgetPtr->GetAttackWidget();
-
 	if (IsValid(AttackWidgetPtr))
 	{
 		AttackWidgetPtr->OnAttackConfirmed().RemoveAll(this);
 	}
+
+	UJoustDefenseWidget* DefenseWidgetPtr = RootWidgetPtr->GetDefenseWidget();
+	if (IsValid(DefenseWidgetPtr))
+	{
+		DefenseWidgetPtr->OnShieldPointChanged().RemoveAll(this);
+
+		DefenseWidgetPtr->OnParryRequested().RemoveAll(this);
+	}
+}
+
+void UJoustPresentationController::RefreshDefenseScreen()
+{
+	AJoustGameState* GameStatePtr = GameState.Get();
+	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
+	if (!IsValid(GameStatePtr) || !IsValid(RootWidgetPtr))
+		return;
+
+	UJoustDefenseWidget* DefenseWidgetPtr = RootWidgetPtr->GetDefenseWidget();
+	if (!IsValid(DefenseWidgetPtr))
+		return;
+
+	const UJoustRuleSetDataAsset* RuleSetPtr = GameStatePtr->GetRuleSet();
+	if (!IsValid(RuleSetPtr))
+		return;
+
+	DefenseWidgetPtr->SetLanceBoxBounds(RuleSetPtr->LanceBoxMin, RuleSetPtr->LanceBoxMax);
+}
+
+void UJoustPresentationController::HandleShieldPointChanged(FVector2D InShieldPoint)
+{
+	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
+	if (!IsValid(PlayerControllerPtr))
+		return;
+
+	PlayerControllerPtr->RequestShieldPoint(InShieldPoint);
+}
+
+void UJoustPresentationController::HandleParryRequested(FVector2D InShieldPoint)
+{
+	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
+	AJoustGameState* GameStatePtr = GameState.Get();
+	if (!IsValid(PlayerControllerPtr) || !IsValid(GameStatePtr))
+		return;
+
+	const float ParryInputTime = static_cast<float>(GameStatePtr->GetServerWorldTimeSeconds());
+
+	PlayerControllerPtr->RequestParry(InShieldPoint, ParryInputTime);
+}
+
+void UJoustPresentationController::HandlePredictionStateChanged()
+{
+	RefreshDefensePrediction();
+}
+
+void UJoustPresentationController::RefreshDefensePrediction()
+{
+	AJoustGameState* GameStatePtr = GameState.Get();
+	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
+	AJoustPlayerState* PlayerStatePtr = GetPlayerState();
+	if (!IsValid(GameStatePtr) || !IsValid(RootWidgetPtr) || !IsValid(PlayerStatePtr) || GameStatePtr->GetCurrentPhase() != EJoustPhase::Defense)
+		return;
+	
+	UJoustDefenseWidget* DefenseWidgetPtr = RootWidgetPtr->GetDefenseWidget();
+	if (!IsValid(DefenseWidgetPtr))
+		return;
+
+	const FJoustPredictionState* PredictionStatePtr = nullptr;
+
+	if (PlayerStatePtr == GameStatePtr->GetPlayerAState())
+	{
+		PredictionStatePtr = &GameStatePtr->GetPlayerAPredictionState();
+	}
+	else if (PlayerStatePtr == GameStatePtr->GetPlayerBState())
+	{
+		PredictionStatePtr = &GameStatePtr->GetPlayerBPredictionState();
+	}
+
+	if (PredictionStatePtr == nullptr)
+		return;
+
+	DefenseWidgetPtr->SetPredictionState(*PredictionStatePtr);
 }
 
 void UJoustPresentationController::HandleStartMatchRequested()
 {
 	AJoustPlayerController* PlayerControllerPtr = PlayerController.Get();
-
 	if (!IsValid(PlayerControllerPtr))
 		return;
 

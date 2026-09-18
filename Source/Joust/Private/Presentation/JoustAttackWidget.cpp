@@ -158,6 +158,16 @@ void UJoustAttackWidget::SetAttackUsageStates(const TArray<FJoustAttackUsageStat
 
 void UJoustAttackWidget::SetLanceBoxBounds(const FVector2D& InLanceBoxMin, const FVector2D& InLanceBoxMax)
 {
+	if (LanceBoxMin != InLanceBoxMin || LanceBoxMax != InLanceBoxMax)
+	{
+		bHasSelectedAttackPoint = false;
+
+		if (IsValid(Image_AttackPointMarker))
+		{
+			Image_AttackPointMarker->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
+
 	LanceBoxMin = InLanceBoxMin;
 	LanceBoxMax = InLanceBoxMax;
 
@@ -168,13 +178,6 @@ void UJoustAttackWidget::SetLanceBoxBounds(const FVector2D& InLanceBoxMin, const
 		FMath::IsFinite(LanceBoxMax.Y) &&
 		LanceBoxMin.X < LanceBoxMax.X &&
 		LanceBoxMin.Y < LanceBoxMax.Y;
-
-	bHasSelectedAttackPoint = false;
-
-	if (IsValid(Image_AttackPointMarker))
-	{
-		Image_AttackPointMarker->SetVisibility(ESlateVisibility::Collapsed);
-	}
 
 	UpdateConfirmButton();
 }
@@ -267,7 +270,6 @@ FReply UJoustAttackWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, 
 	}
 
 	UCanvasPanelSlot* MarkerSlotPtr = Cast<UCanvasPanelSlot>(Image_AttackPointMarker->Slot);
-
 	if (!IsValid(MarkerSlotPtr))
 		return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 

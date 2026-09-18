@@ -171,6 +171,42 @@ void AJoustPlayerController::RequestAttack(EJoustAttackType InAttackType, const 
 	ServerRequestAttack(InAttackType, InAttackPoint);
 }
 
+void AJoustPlayerController::RequestShieldPoint(const FVector2D& InShieldPoint)
+{
+	if (!IsLocalController() || !FMath::IsFinite(InShieldPoint.X) || !FMath::IsFinite(InShieldPoint.Y))
+		return;
+
+	SetShieldPoint(InShieldPoint);
+
+	if (HasAuthority())
+	{
+		HandleDefenseRequest(InShieldPoint, false, 0.0f);
+
+		return;
+	}
+
+	ServerRequestShieldPoint(InShieldPoint);
+}
+
+
+void AJoustPlayerController::RequestParry(const FVector2D & InShieldPoint, float InParryInputTime)
+{
+	if (!IsLocalController() || bParryAttempted || !FMath::IsFinite(InShieldPoint.X) || !FMath::IsFinite(InShieldPoint.Y) || !FMath::IsFinite(InParryInputTime))
+		return;
+
+	SetShieldPoint(InShieldPoint);
+	SetParryAttempt(InParryInputTime);
+
+	if (HasAuthority())
+	{
+		HandleDefenseRequest(InShieldPoint, true, InParryInputTime);
+
+		return;
+	}
+
+	ServerRequestParry(InShieldPoint, InParryInputTime);
+}
+
 FVector2D AJoustPlayerController::GetShieldPoint() const
 {
 	return ShieldPoint;
@@ -197,12 +233,10 @@ void AJoustPlayerController::HandleStrategySelectionRequest(FName InCardID)
 		return;
 
 	UWorld* WorldPtr = GetWorld();
-
 	if (!IsValid(WorldPtr))
 		return;
 
 	AJoustGameMode* GameModePtr = WorldPtr->GetAuthGameMode<AJoustGameMode>();
-
 	if (!IsValid(GameModePtr))
 		return;
 
@@ -220,12 +254,10 @@ void AJoustPlayerController::HandleStrategyBanRequest(FName InCardID)
 		return;
 
 	UWorld* WorldPtr = GetWorld();
-
 	if (!IsValid(WorldPtr))
 		return;
 
 	AJoustGameMode* GameModePtr = WorldPtr->GetAuthGameMode<AJoustGameMode>();
-
 	if (!IsValid(GameModePtr))
 		return;
 
@@ -242,11 +274,9 @@ void AJoustPlayerController::HandleAttackRequest(EJoustAttackType InAttackType, 
 	bool bAccepted = false;
 
 	UWorld* WorldPtr = GetWorld();
-
 	if (IsValid(WorldPtr))
 	{
 		AJoustGameMode* GameModePtr = WorldPtr->GetAuthGameMode<AJoustGameMode>();
-
 		if (IsValid(GameModePtr))
 		{
 			bAccepted =	GameModePtr->SubmitPlayerAttack(this, InAttackType, InAttackPoint);
@@ -269,16 +299,40 @@ void AJoustPlayerController::ClientAttackRequestCompleted_Implementation(bool bI
 void AJoustPlayerController::HandleStartMatchRequest()
 {
 	UWorld* WorldPtr = GetWorld();
-
 	if (!IsValid(WorldPtr))
 		return;
 
 	AJoustGameMode* GameModePtr = WorldPtr->GetAuthGameMode<AJoustGameMode>();
-
 	if (!IsValid(GameModePtr))
 		return;
 
 	GameModePtr->StartJoustMatch(this);
+}
+
+void AJoustPlayerController::HandleDefenseRequest(const FVector2D& InShieldPoint, bool bInParryAttempted, float InParryInputTime)
+{
+	if (!HasAuthority() || !FMath::IsFinite(InShieldPoint.X) || !FMath::IsFinite(InShieldPoint.Y) || (bInParryAttempted && !FMath::IsFinite(InParryInputTime)))
+		return;
+
+	UWorld* WorldPtr = GetWorld();
+	if (!IsValid(WorldPtr))
+		return;
+
+	AJoustGameMode* GameModePtr = WorldPtr->GetAuthGameMode<AJoustGameMode>();
+	if (!IsValid(GameModePtr))
+		return;
+
+	GameModePtr->SubmitPlayerDefense(this, InShieldPoint, bInParryAttempted, InParryInputTime);
+}
+
+void AJoustPlayerController::ServerRequestParry_Implementation(FVector2D InShieldPoint, float InParryInputTime)
+{
+	HandleDefenseRequest(InShieldPoint, true, InParryInputTime);
+}
+
+void AJoustPlayerController::ServerRequestShieldPoint_Implementation(FVector2D InShieldPoint)
+{
+	HandleDefenseRequest(InShieldPoint, false, 0.0f);
 }
 
 void AJoustPlayerController::ServerRequestStartMatch_Implementation()

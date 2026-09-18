@@ -21,7 +21,7 @@ class UJoustPredictionSeriesController;
 class IJoustStrategyInput;
 class IJoustAttackInput;
 class IJoustDefenseInput;
-class AJoustPlayerState;
+class AJoustPlayerState; 
 class AJoustGameState;
 
 struct FJoustRoundResult;
@@ -192,6 +192,9 @@ private: // ########## private 함수 블록 ##########
 
 	/** Attack 시간 초과 시 사용 가능한 기본 공격을 제출 */
 	bool SubmitDefaultAttack(bool bInPlayerA);
+
+	/** 두 방어 방향의 공개 Prediction 상태를 GameState에 동기화 */
+	void SyncPredictionPublicState();
 
 private: // ########## private 변수 블록 ##########
 

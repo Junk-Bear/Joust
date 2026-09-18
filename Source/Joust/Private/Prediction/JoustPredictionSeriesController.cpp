@@ -33,6 +33,8 @@ bool UJoustPredictionSeriesController::StartPlayback(
 
 	SetTickableTickType(ETickableTickType::Always);
 
+	PredictionStateUpdatedEvent.Broadcast();
+
 	return true;
 }
 
@@ -41,6 +43,8 @@ void UJoustPredictionSeriesController::StopPlayback()
 	SetTickableTickType(ETickableTickType::Never);
 
 	ResetPlaybackData();
+
+	PredictionStateUpdatedEvent.Broadcast();
 }
 
 void UJoustPredictionSeriesController::BuildPredictionState(FJoustPredictionState& OutState) const
@@ -118,6 +122,11 @@ void UJoustPredictionSeriesController::Tick(float InDeltaTime)
 			break;
 
 		AdvanceStage();
+	}
+
+	if (bIsPlaying)
+	{
+		PredictionStateUpdatedEvent.Broadcast();
 	}
 }
 
@@ -256,6 +265,8 @@ void UJoustPredictionSeriesController::CompletePlayback()
 	FakeDisplayCircles.Reset();
 
 	SetTickableTickType(ETickableTickType::Never);
+
+	PredictionStateUpdatedEvent.Broadcast();
 
 	PlaybackCompletedEvent.Broadcast();
 }

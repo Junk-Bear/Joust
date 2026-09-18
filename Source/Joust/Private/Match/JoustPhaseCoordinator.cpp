@@ -18,7 +18,8 @@ bool UJoustPhaseCoordinator::SetNoneTimedPhase(EJoustPhase InPhase)
 	bPlayerAComplete = false;
 	bPlayerBComplete = false;
 
-	if (UWorld* WorldPtr = World.Get())
+	UWorld* WorldPtr = World.Get();
+	if (IsValid(WorldPtr))
 	{
 		const float CurrentTime = WorldPtr->GetTimeSeconds();
 		
@@ -40,7 +41,6 @@ float UJoustPhaseCoordinator::GetRemainingTime() const
 		return 0.0f;
 
 	const UWorld* WorldPtr = World.Get();
-
 	if (!IsValid(WorldPtr))
 		return 0.0f;
 
@@ -132,7 +132,6 @@ void UJoustPhaseCoordinator::MarkPlayerBComplete()
 void UJoustPhaseCoordinator::BeginDestroy()
 {
 	UWorld* WorldPtr = World.Get();
-
 	if (IsValid(WorldPtr))
 	{
 		WorldPtr->GetTimerManager().ClearTimer(PhaseEndTimerHandle);
@@ -175,7 +174,6 @@ void UJoustPhaseCoordinator::TryShortenTime()
 		return;
 
 	UWorld* WorldPtr = World.Get();
-
 	if (!IsValid(WorldPtr))
 		return;
 
@@ -199,7 +197,6 @@ void UJoustPhaseCoordinator::FinishTimedPhase()
 		return;
 
 	UWorld* WorldPtr = World.Get();
-
 	if (IsValid(WorldPtr))
 	{
 		// 조기 종료 였을 경우 남아있는 Timer제거

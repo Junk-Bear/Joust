@@ -32,6 +32,8 @@ class JOUST_API UJoustStrategyWidget : public UUserWidget
 public: // ########## 델리게이트 블록 ##########
 	/** Local Player가 선택한 전략 카드 확정 요청하는 이벤트 */
 	DECLARE_EVENT_OneParam(UJoustStrategyWidget, FOnStrategyConfirmed, FName)
+
+	/** Local Player가 선택한 전략 카드 봉인을 요청하는 이벤트 */
 	DECLARE_EVENT_OneParam(UJoustStrategyWidget, FOnStrategyBanConfirmed, FName);
 
 public: // ########## public 함수 블록 ##########
@@ -51,6 +53,9 @@ public: // ########## public 함수 블록 ##########
 		const TArray<FJoustDefenseHistory>& InDefenseHistory,
 		const FVector2D& InLanceBoxMin,
 		const FVector2D& InLanceBoxMax);
+
+	/** Strategy 단계 진입 시 선택 상태와 히스토리 팝업 초기화 */
+	void ResetStrategyScreen();
 
 protected: // ########## protected 함수 블록 ##########
 
@@ -150,11 +155,11 @@ private: // ########## private 변수 블록 ##########
 	/** FOnStrategyBanConfirmed 이벤트용 */
 	FOnStrategyBanConfirmed StrategyBanConfirmedEvent;
 
-	public: // ########## GET SET 블록 ##########
+public: // ########## GET SET 블록 ##########
 
-		FORCEINLINE FOnStrategyConfirmed& OnStrategyConfirmed() { return StrategyConfirmedEvent; }
+	FORCEINLINE FOnStrategyConfirmed& OnStrategyConfirmed() { return StrategyConfirmedEvent; }
 
-		FORCEINLINE FOnStrategyBanConfirmed& OnStrategyBanConfirmed() { return StrategyBanConfirmedEvent; }
+	FORCEINLINE FOnStrategyBanConfirmed& OnStrategyBanConfirmed() { return StrategyBanConfirmedEvent; }
 
 
 private: // ########## Bind Widget 블록 ##########

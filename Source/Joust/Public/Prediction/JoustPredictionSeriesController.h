@@ -30,6 +30,9 @@ public: // ########## 델리게이트 블록 ##########
 	/** 전체 Real Prediction 재생이 완료됨을 알리는 이벤트 */
 	DECLARE_EVENT(UJoustPredictionSeriesController, FOnPlaybackCompleted);
 
+	/** 공개 Prediction 표시 상태가 갱신됐음을 알리는 이벤트 */
+	DECLARE_EVENT(UJoustPredictionSeriesController, FOnPredictionStateUpdated);
+
 public: // ########## public 함수 블록 ##########
 
 	/** 내부 Prediction 보간 객체를 생성 */
@@ -119,7 +122,10 @@ private: // ########## private 변수 블록 ##########
 	FOnStageCompleted StageCompletedEvent;
 
 	/** FOnPlaybackCompleted 이벤트용 */
-	FOnPlaybackCompleted PlaybackCompletedEvent;	
+	FOnPlaybackCompleted PlaybackCompletedEvent;
+
+	/** FOnPredictionStateUpdated 이벤트용 */
+	FOnPredictionStateUpdated PredictionStateUpdatedEvent;
 
 public: // ########## GET SET 블록 ##########
 
@@ -134,4 +140,6 @@ public: // ########## GET SET 블록 ##########
 	FORCEINLINE FOnStageCompleted& OnStageCompleted() { return StageCompletedEvent; }
 
 	FORCEINLINE FOnPlaybackCompleted& OnPlaybackCompleted() { return PlaybackCompletedEvent; }
+
+	FORCEINLINE FOnPredictionStateUpdated& OnPredictionStateUpdated() { return PredictionStateUpdatedEvent; }
 };

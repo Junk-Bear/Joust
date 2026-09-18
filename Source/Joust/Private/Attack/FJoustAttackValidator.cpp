@@ -20,13 +20,7 @@ bool FJoustAttackValidator::Validate(const UJoustRuleSetDataAsset& InRuleSet, co
 		InAttackPoint.Y > InRuleSet.LanceBoxMax.Y)
 		return false;
 
-	const TObjectPtr<UJoustAttackTypeDataAsset>* AttackTypeSettingPtr = InRuleSet.AttackTypeSettings.Find(InAttackType);
-
-	if (AttackTypeSettingPtr == nullptr)
-		return false;
-
-	const UJoustAttackTypeDataAsset* AttackTypeDataPtr = AttackTypeSettingPtr->Get();
-
+	const UJoustAttackTypeDataAsset* AttackTypeDataPtr = InRuleSet.AttackTypeSettings.FindRef(InAttackType).Get();
 	if (!IsValid(AttackTypeDataPtr))
 		return false;
 

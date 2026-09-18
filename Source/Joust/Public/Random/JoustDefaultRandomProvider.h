@@ -25,7 +25,7 @@ public:  // ######### public 함수 블록 #########
 	// ====================
 	int32 GetRandom(int32 InMin, int32 InMax) override;
 	float GetRandom(float InMin, float InMax) override;
-	FVector2D GetRandom(FVector2D& InMin, FVector2D& InMax) override;
+	FVector2D GetRandom(const FVector2D& InMin, const FVector2D& InMax) override;
 
 private: // ########## private 함수 블록 ##########
 	/** 실제 랜덤 값을 생성하는 Seed 기반 스트림 */

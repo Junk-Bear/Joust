@@ -86,7 +86,6 @@ bool UJoustStrategyService::SubmitStrategySelection(bool bInPlayerA, FName InCar
 		return false;
 
 	UJoustStrategyCardDataAsset* SelectedCardPtr = FindPublicCardByID(InCardID);
-
 	if (!IsValid(SelectedCardPtr))
 		return false;
 
@@ -144,7 +143,7 @@ bool UJoustStrategyService::AreBansComplete() const
 	return bRoundPrepared && CardBanService.AreAllRequiredBanSumitted();
 }
 
-bool UJoustStrategyService::GetSelectableCards(bool bInPlayerA, TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& OutCards) const
+bool UJoustStrategyService::GetSelectableCards(bool bInPlayerA, TArray<UJoustStrategyCardDataAsset*>& OutCards) const
 {
 	OutCards.Reset();
 

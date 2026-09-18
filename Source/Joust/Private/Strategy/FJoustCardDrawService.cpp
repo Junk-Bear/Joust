@@ -15,7 +15,7 @@ bool FJoustCardDrawService::Draw(
 	if (InCardsToDraw <= 0)
 		return false;
 
-	TArray<TObjectPtr<UJoustStrategyCardDataAsset>> WorkingCards;
+	TArray<UJoustStrategyCardDataAsset*> WorkingCards;
 	WorkingCards.Reserve(InCardPool.Num());
 
 	TSet<FName> SeenCardIDs;

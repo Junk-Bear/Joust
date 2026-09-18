@@ -28,5 +28,5 @@ public:
 	virtual float GetRandom(float InMin, float InMax) = 0;
 
 	/** Min~Max 범위의 랜덤 실수를 반환 */
-	virtual FVector2D GetRandom(FVector2D& InMin, FVector2D& InMax) = 0;
+	virtual FVector2D GetRandom(const FVector2D& InMin, const FVector2D& InMax) = 0;
 };

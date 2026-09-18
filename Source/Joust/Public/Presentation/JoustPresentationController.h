@@ -13,6 +13,7 @@ class AJoustHUD;
 class AJoustPlayerController;
 class AJoustPlayerState;
 class UJoustHUDWidget;
+class UJoustDefenseWidget;
 
 /**
  * Local Player의 Presentation 흐름을 중계
@@ -91,6 +92,33 @@ private: // ########## private 함수 블록 ##########
 	/** 서버의 공격 요청 처리 결과를 Attack 화면에 전달 */
 	void HandleAttackRequestCompleted(bool bInAccepted);
 
+	/** START MATCH 버튼 요청 처리 */
+	void HandleStartMatchRequested();
+
+	/** 새로운 Round 또는 Phase 진입 시 화면 입력 상태 초기화 */
+	void RefreshPhaseEntry();
+
+	/** 화면별 Widget 이벤트 구독 */
+	void BindWidgetEvents();
+
+	/** 화면별 Widget 이벤트 구독 해제 */
+	void UnbindWidgetEvents();
+
+	/** LanceBox 범위를 Defense 화면에 반영 */
+	void RefreshDefenseScreen();
+
+	/** Defense 화면에서 변경된 방패 위치 전달 */
+	void HandleShieldPointChanged(FVector2D InShieldPoint);
+
+	/** Defense 화면에서 발생한 패링 요청 전달 */
+	void HandleParryRequested(FVector2D InShieldPoint);
+
+	/** 공개 Prediction 상태 변경 처리 */
+	void HandlePredictionStateChanged();
+
+	/** Local Player가 방어할 Prediction 상태를 Defense 화면에 반영 */
+	void RefreshDefensePrediction();
+
 private: // ########## private 변수 블록 ##########
 
 	/** 이 Presentation을 소유한 Local PlayerController */
@@ -110,15 +138,15 @@ private: // ########## private 변수 블록 ##########
 
 	/** 마지막으로 표시한 정수 단위 남은 시간 */
 	int32 LastDisplayedRemainingSeconds = INDEX_NONE;
-	
-	/** 화면별 Widget 이벤트 구독 */
-	void BindWidgetEvents();
 
-	/** 화면별 Widget 이벤트 구독 해제 */
-	void UnbindWidgetEvents();
+	/** 마지막으로 입력 상태를 초기화한 라운드 번호 */
+	int32 LastInitializedRoundNumber = INDEX_NONE;
 
-	/** START MATCH 버튼 요청 처리 */
-	void HandleStartMatchRequested();
+	/** 마지막으로 입력 상태를 초기화한 Phase */
+	EJoustPhase LastInitializedPhase = EJoustPhase::Strategy;
+
+	/** 현재 Round와 Phase의 입력 상태를 초기화했는지 */
+	bool bHasInitializedPhase = false;
 
 public: // ########## GET SET 블록 ##########
 

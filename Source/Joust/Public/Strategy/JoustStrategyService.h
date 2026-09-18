@@ -55,7 +55,7 @@ public: // ########## public 함수 블록 ##########
 	bool AreBansComplete() const;
 
 	/** 해당 플레이어가 현재 선택할 수 있는 카드 목록을 반환 */
-	bool GetSelectableCards(bool bInPlayerA, TArray<TObjectPtr<UJoustStrategyCardDataAsset>>& OutCards) const;
+	bool GetSelectableCards(bool bInPlayerA, TArray<UJoustStrategyCardDataAsset*>& OutCards) const;
 
 	/** 해당 플레이어가 선택한 전략 카드 ID 반환 */
 	FName GetSelectedCardID(bool bInPlayerA) const;

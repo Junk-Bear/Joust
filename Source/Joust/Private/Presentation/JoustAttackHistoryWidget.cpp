@@ -212,14 +212,12 @@ void UJoustAttackHistoryWidget::AddMarker(const FVector2D& InPosition, const FSt
 		return;
 
 	UOverlay* MarkerOverlayPtr = WidgetTree->ConstructWidget<UOverlay>();
-
 	if (!IsValid(MarkerOverlayPtr))
 		return;
 
 	MarkerOverlayPtr->SetVisibility(ESlateVisibility::HitTestInvisible);
 
 	UCanvasPanelSlot* CanvasSlotPtr = Canvas_Markers->AddChildToCanvas(MarkerOverlayPtr);
-
 	if (!IsValid(CanvasSlotPtr))
 		return;
 
@@ -233,7 +231,6 @@ void UJoustAttackHistoryWidget::AddMarker(const FVector2D& InPosition, const FSt
 
 	UTextBlock* MarkerShapeTextPtr = WidgetTree->ConstructWidget<UTextBlock>();
 	UTextBlock* MarkerValueTextPtr = WidgetTree->ConstructWidget<UTextBlock>();
-
 	if (!IsValid(MarkerShapeTextPtr) || !IsValid(MarkerValueTextPtr))
 		return;
 
@@ -290,7 +287,6 @@ void UJoustAttackHistoryWidget::AddOverlapDescription(const FString & InDescript
 		return;
 
 	UTextBlock* DescriptionTextPtr = WidgetTree->ConstructWidget<UTextBlock>();
-
 	if (!IsValid(DescriptionTextPtr))
 		return;
 

@@ -30,7 +30,6 @@ bool UJoustPredictionService::PreparePrediction(
 		return false;
 
 	const UJoustAttackTypeDataAsset* AttackTypeDataPtr = FJoustPredictionTypeResolver::Resolve(*RuleSet, InAttackType);
-
 	if (!IsValid(AttackTypeDataPtr))
 		return false;
 

@@ -11,7 +11,6 @@ void AJoustHUD::BeginPlay()
 	Super::BeginPlay();
 
 	AJoustPlayerController* JoustPlayerControllerPtr = Cast<AJoustPlayerController>(GetOwningPlayerController());
-
 	if (!IsValid(JoustPlayerControllerPtr) || !JoustPlayerControllerPtr->IsLocalController() || !RootWidgetClass)
 		return;
 	

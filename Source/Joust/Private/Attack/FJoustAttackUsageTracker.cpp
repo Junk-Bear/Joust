@@ -17,7 +17,6 @@ bool FJoustAttackUsageTracker::Initialize(const TMap<EJoustAttackType, TObjectPt
     for (const TPair<EJoustAttackType, TObjectPtr<UJoustAttackTypeDataAsset>>& Item : InAttackTypeSettings)
     {
         const UJoustAttackTypeDataAsset* AttackTypeDataPtr = Item.Value.Get();
-
         if (!IsValid(AttackTypeDataPtr))
         {
             RemainingUses.Reset();
@@ -86,7 +85,7 @@ bool FJoustAttackUsageTracker::IsUnlimited(EJoustAttackType InAttackType) const
     if (RemainingUsesPtr == nullptr)
         return false;
 
-    return (RemainingUsesPtr != nullptr) && (*RemainingUsesPtr == INDEX_NONE);
+    return *RemainingUsesPtr == INDEX_NONE;
 }
 
 int32 FJoustAttackUsageTracker::GetRemainingUses(EJoustAttackType InAttackType) const

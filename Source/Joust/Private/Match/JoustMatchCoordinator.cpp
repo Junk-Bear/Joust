@@ -47,7 +47,6 @@ bool UJoustMatchCoordinator::StartMatch()
 	ResetMatchData();
 
 	AJoustGameState* GameStatePtr = GameState.Get();
-
 	if (IsValid(GameStatePtr))
 	{
 		GameStatePtr->ResetMatchState();
@@ -111,7 +110,6 @@ bool UJoustMatchCoordinator::StartCurrentRound()
 	FlowState = EMatchFlowState::RoundInProgress;
 
 	AJoustGameState* GameStatePtr = GameState.Get();
-
 	if (IsValid(GameStatePtr))
 	{
 		GameStatePtr->SetCurrentRoundNumber(CurrentRoundNumber);
@@ -120,7 +118,7 @@ bool UJoustMatchCoordinator::StartCurrentRound()
 	return true;
 }
 
-void UJoustMatchCoordinator::HandleRoundResolved(FJoustRoundResult& InRoundResult)
+void UJoustMatchCoordinator::HandleRoundResolved(const FJoustRoundResult& InRoundResult)
 {
 	if (FlowState != EMatchFlowState::RoundInProgress)
 		return;
@@ -132,7 +130,6 @@ void UJoustMatchCoordinator::HandleRoundResolved(FJoustRoundResult& InRoundResul
 	PlayerBScore += InRoundResult.BtoAExchangeResult.ScoreDelta;
 
 	AJoustGameState* GameStatePtr = GameState.Get();
-
 	if (IsValid(GameStatePtr))
 	{
 		GameStatePtr->SetScores(PlayerAScore, PlayerBScore);
@@ -166,7 +163,6 @@ bool UJoustMatchCoordinator::HandleRoundResolvedCompleted()
 	}
 
 	UJoustPhaseCoordinator* PhaseCoordinatorPtr = PhaseCoordinator.Get();
-
 	if (!IsValid(PhaseCoordinatorPtr))
 		return false;
 
@@ -174,7 +170,6 @@ bool UJoustMatchCoordinator::HandleRoundResolvedCompleted()
 		return false;
 
 	AJoustGameState* GameStatePtr = GameState.Get();
-
 	if (IsValid(GameStatePtr))
 	{
 		GameStatePtr->SetPhaseState(EJoustPhase::MatchResult, PhaseCoordinatorPtr->GetPhaseEndTime());
