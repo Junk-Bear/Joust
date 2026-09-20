@@ -77,7 +77,6 @@ bool UJoustAttackService::SubmitAttack(bool bInPlayerA, const FJoustAttackData& 
     }
 
     FJoustAttackUsageTracker& UsageTrackerRef = bInPlayerA ? PlayerAUsageTracker : PlayerBUsageTracker;
-
     if (!FJoustAttackValidator::Validate(*RuleSet, UsageTrackerRef, InAttackData.AttackPoint, InAttackData.AttackType))
         return false;
 

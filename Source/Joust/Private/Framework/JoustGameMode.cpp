@@ -17,6 +17,7 @@
 #include "Attack/JoustAttackTypeDataAsset.h"
 #include "Prediction/JoustPredictionTypes.h"
 #include "Presentation/JoustHUD.h"
+#include "Result/JoustResultTypes.h"
 
 AJoustGameMode::AJoustGameMode()
 {
@@ -78,7 +79,6 @@ bool AJoustGameMode::SubmitPlayerStrategySelection(AJoustPlayerController* InReq
 		return false;
 
 	const bool bPlayerA = InRequestingController == PlayerAController.Get();
-
 	if (!bPlayerA && InRequestingController != PlayerBController.Get())
 		return false;
 
@@ -107,7 +107,6 @@ bool AJoustGameMode::SubmitPlayerStrategyBan(AJoustPlayerController* InRequestin
 
 	const bool bPlayerA = InRequestingController == PlayerAController.Get();
 	const bool bPlayerB = InRequestingController == PlayerBController.Get();
-
 	if (!bPlayerA && !bPlayerB)
 		return false;
 
@@ -129,7 +128,6 @@ bool AJoustGameMode::SubmitPlayerAttack(AJoustPlayerController* InRequestingCont
 
 	const bool bPlayerA = InRequestingController == PlayerAController.Get();
 	const bool bPlayerB = InRequestingController == PlayerBController.Get();
-
 	if (!bPlayerA && !bPlayerB)
 		return false;
 
@@ -172,7 +170,6 @@ bool AJoustGameMode::SubmitPlayerDefense(AJoustPlayerController* InRequestingCon
 
 	const bool bPlayerA = InRequestingController == PlayerAController.Get();
 	const bool bPlayerB = InRequestingController == PlayerBController.Get();
-
 	if (!bPlayerA && !bPlayerB)
 		return false;
 
@@ -260,7 +257,11 @@ bool AJoustGameMode::InitializeMatchCore()
 
 	RoundCoordinator->OnStrategyBansCompleted().AddUObject(this, &AJoustGameMode::HandleStrategyBansCompleted);
 
+	RoundCoordinator->OnRoundResult().AddUObject(this, &AJoustGameMode::HandleRoundResult);
+
 	MatchCoordinator->Initialize(RoundCoordinator, PhaseCoordinator, RuleSet.Get());
+
+	MatchCoordinator->OnMatchResult().AddUObject(this, &AJoustGameMode::HandleMatchResult);
 
 	RoundCoordinator->SetGameState(JoustGameStatePtr);
 
@@ -494,7 +495,6 @@ bool AJoustGameMode::SubmitAIStrategy(bool bInPlayerA, AJoustAIController& InOut
 	InOutAIController.ResetStrategyInput();
 
 	const TArray<FName>& PublicCardsRef = JoustGameStatePtr->GetPublicStrategyCardIDs();
-
 	if (PublicCardsRef.IsEmpty())
 		return false;
 
@@ -552,7 +552,6 @@ bool AJoustGameMode::SubmitAIAttack(bool bInPlayerA, AJoustAIController& InOutAI
 			continue;
 
 		const int32 RemainingUses = PlayerStatePtr->GetRemainingAttackUses(Item.Key);
-
 		if (RemainingUses == INDEX_NONE || RemainingUses > 0)
 		{
 			AvailableAttackTypes.Add(Item.Key);
@@ -581,7 +580,6 @@ bool AJoustGameMode::SubmitAIDefense(bool bInPlayerA, AJoustAIController& InOutA
 	}
 
 	FJoustPredictionState PredictionState;
-
 	if (!RoundCoordinator->GetDefensePredictionState(bInPlayerA, PredictionState))
 		return false;
 
@@ -592,4 +590,48 @@ bool AJoustGameMode::SubmitAIDefense(bool bInPlayerA, AJoustAIController& InOutA
 	InOutAIController.SetShieldPoint(PredictionState.DisplayCircles[CircleIdx].Center);
 
 	return RoundCoordinator->SubmitDefense(bInPlayerA, InOutAIController);
+}
+
+void AJoustGameMode::HandleRoundResult(const FJoustRoundResult& InRoundResult)
+{
+	if (InRoundResult.RoundNumber <= 0)
+		return;
+
+	UWorld* WorldPtr = GetWorld();
+	if (!IsValid(WorldPtr))
+		return;
+
+	WorldPtr->GetTimerManager().ClearTimer(RoundResultCompletionTimerHandle);
+
+	WorldPtr->GetTimerManager().SetTimer(RoundResultCompletionTimerHandle, this, &AJoustGameMode::CompleteRoundResultPresentation, FMath::Max(0.1f, RoundResultDisplayDuration), false);
+}
+
+void AJoustGameMode::HandleMatchResult(const FJoustMatchResult & InMatchResult)
+{
+	if (InMatchResult.MatchOutcome == EJoustMatchOutcome::Undecided)
+		return;
+
+	UWorld* WorldPtr = GetWorld();
+	if (!IsValid(WorldPtr))
+		return;
+
+	WorldPtr->GetTimerManager().ClearTimer(MatchResultCompletionTimerHandle);
+
+	WorldPtr->GetTimerManager().SetTimer(MatchResultCompletionTimerHandle, this, &AJoustGameMode::CompleteMatchResultPresentation, FMath::Max(0.1f, MatchResultDisplayDuration), false);
+}
+
+void AJoustGameMode::CompleteRoundResultPresentation()
+{
+	if (!IsValid(RoundCoordinator))
+		return;
+
+	RoundCoordinator->CompleteRoundResultPhase();
+}
+
+void AJoustGameMode::CompleteMatchResultPresentation()
+{
+	if (!IsValid(MatchCoordinator))
+		return;
+
+	MatchCoordinator->CompleteMatchResultPhase();
 }

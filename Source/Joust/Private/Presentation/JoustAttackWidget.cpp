@@ -255,12 +255,10 @@ FReply UJoustAttackWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, 
 	const FGeometry& LanceBoxGeometryRef = Canvas_LanceBox->GetCachedGeometry();
 
 	const FVector2D CanvasSize = LanceBoxGeometryRef.GetLocalSize();
-
 	if (CanvasSize.X <= 0.0f || CanvasSize.Y <= 0.0f)
 		return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 
 	const FVector2D LocalPosition = LanceBoxGeometryRef.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
-
 	if (LocalPosition.X < 0.0f ||
 		LocalPosition.Y < 0.0f ||
 		LocalPosition.X > CanvasSize.X ||

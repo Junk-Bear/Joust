@@ -50,7 +50,6 @@ void FJoustAttackUsageTracker::Reset()
 bool FJoustAttackUsageTracker::CanUse(EJoustAttackType InAttackType) const
 {
     const int32* RemainingUsesPtr = RemainingUses.Find(InAttackType);
-
     if (RemainingUsesPtr == nullptr)
         return false;
 
@@ -63,7 +62,6 @@ bool FJoustAttackUsageTracker::CanUse(EJoustAttackType InAttackType) const
 bool FJoustAttackUsageTracker::ConsumeUse(EJoustAttackType InAttackType)
 {
     int32* RemainingUsesPtr = RemainingUses.Find(InAttackType);
-
     if (RemainingUsesPtr == nullptr)
         return false;
 
@@ -81,7 +79,6 @@ bool FJoustAttackUsageTracker::ConsumeUse(EJoustAttackType InAttackType)
 bool FJoustAttackUsageTracker::IsUnlimited(EJoustAttackType InAttackType) const
 {
     const int32* RemainingUsesPtr = RemainingUses.Find(InAttackType);
-
     if (RemainingUsesPtr == nullptr)
         return false;
 
@@ -91,7 +88,6 @@ bool FJoustAttackUsageTracker::IsUnlimited(EJoustAttackType InAttackType) const
 int32 FJoustAttackUsageTracker::GetRemainingUses(EJoustAttackType InAttackType) const
 {
     const int32* RemainingUsesPtr = RemainingUses.Find(InAttackType);
-
     if (RemainingUsesPtr == nullptr)
         return 0;
 

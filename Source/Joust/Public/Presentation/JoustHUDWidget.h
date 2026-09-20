@@ -48,6 +48,10 @@ public: // ########### GET SET 블록 ##########
 
 	FORCEINLINE UJoustDefenseWidget* GetDefenseWidget() const { return WBP_JoustDefense; }
 
+	FORCEINLINE UJoustRoundResultWidget* GetRoundResultWidget() const { return WBP_JoustRoundResult; }
+
+	FORCEINLINE UJoustMatchResultWidget* GetMatchResultWidget() const { return WBP_JoustMatchResult; }
+
 private: // ########## Bind Widget 블록 ##########
 
 	/** 상단 공통 HUD */

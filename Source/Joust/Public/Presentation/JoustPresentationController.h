@@ -119,6 +119,12 @@ private: // ########## private 함수 블록 ##########
 	/** Local Player가 방어할 Prediction 상태를 Defense 화면에 반영 */
 	void RefreshDefensePrediction();
 
+	/** 복제된 라운드 결과를 RoundResult 화면에 반영 */
+	void RefreshRoundResultScreen();
+
+	/** 복제된 최종 경기 결과를 MatchResult 화면에 반영 */
+	void RefreshMatchResultScreen();
+
 private: // ########## private 변수 블록 ##########
 
 	/** 이 Presentation을 소유한 Local PlayerController */

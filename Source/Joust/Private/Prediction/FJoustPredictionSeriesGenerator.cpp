@@ -32,7 +32,6 @@ bool FJoustPredictionSeriesGenerator::Generate(
 		InSettings.StageCount);
 
 	FJoustPredictionCircle CurrentCircle;
-
 	if (!FJoustInitialPredictionGenerator::Generate(
 		InTargetPoint,
 		InSettings.InitialRadius,
@@ -49,7 +48,6 @@ bool FJoustPredictionSeriesGenerator::Generate(
 	for (int32 i = 1; i < InSettings.StageCount; ++i)
 	{
 		FJoustPredictionCircle NextCircle;
-
 		if (!FJoustNextPredictionGenerator::Generate(
 			CurrentCircle,
 			InSettings.InitialRadius *

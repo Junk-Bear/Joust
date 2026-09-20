@@ -66,13 +66,11 @@ bool UJoustDefenseWidget::TryUpdateShieldPoint(const FVector2D& InScreenSpacePos
 	const FGeometry& LanceBoxGeometryRef = Canvas_LanceBox->GetCachedGeometry();
 
 	const FVector2D CanvasSize = LanceBoxGeometryRef.GetLocalSize();
-
 	if (CanvasSize.X <= 0.0f || CanvasSize.Y <= 0.0f)
 		return false;
 
 	const FVector2D LocalPosition =
 		LanceBoxGeometryRef.AbsoluteToLocal(InScreenSpacePosition);
-
 	if (LocalPosition.X < 0.0f || LocalPosition.Y < 0.0f || LocalPosition.X > CanvasSize.X || LocalPosition.Y > CanvasSize.Y)
 		return false;
 
@@ -171,13 +169,11 @@ int32 UJoustDefenseWidget::NativePaint(
 	const FGeometry& LanceBoxGeometryRef = Canvas_LanceBox->GetCachedGeometry();
 
 	const FVector2D CanvasSize = LanceBoxGeometryRef.GetLocalSize();
-
 	if (CanvasSize.X <= 0.0f || CanvasSize.Y <= 0.0f)
 		return MaxLayerId;
 
 	const float LanceBoxWidth = LanceBoxMax.X - LanceBoxMin.X;
 	const float LanceBoxHeight = LanceBoxMax.Y - LanceBoxMin.Y;
-
 	if (LanceBoxWidth <= 0.0f || LanceBoxHeight <= 0.0f)
 		return MaxLayerId;
 

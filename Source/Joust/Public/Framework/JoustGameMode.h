@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "Player/JoustPlayerTypes.h"
+#include "TimerManager.h"
 #include "JoustGameMode.generated.h"
 
 class UJoustRuleSetDataAsset;
@@ -15,6 +16,9 @@ class UJoustMatchCoordinator;
 class AJoustPlayerController;
 class AController;
 class AJoustAIController;
+
+struct FJoustRoundResult;
+struct FJoustMatchResult;
 
 /**
  * 게임모드
@@ -93,6 +97,18 @@ private: // ########## private 함수 블록 ##########
 	/** 해당 슬롯의 기본 AI Defense 입력 제출 */
 	bool SubmitAIDefense(bool bInPlayerA, AJoustAIController& InOutAIController);
 
+	/** RoundResult가 확정되면 서버 표시 완료 타이머 시작 */
+	void HandleRoundResult(const FJoustRoundResult& InRoundResult);
+
+	/** MatchResult가 확정되면 서버 표시 완료 타이머 시작 */
+	void HandleMatchResult(const FJoustMatchResult& InMatchResult);
+
+	/** RoundResult 표시가 끝나면 다음 라운드 또는 MatchResult로 진행 */
+	void CompleteRoundResultPresentation();
+
+	/** MatchResult 표시가 끝나면 내부 Match 상태를 종료 상태로 변경 */
+	void CompleteMatchResultPresentation();
+
 private: // ########## private 변수 블록 ##########
 
 	/** 이번 경기에서 사용할 전체 RuleSet */
@@ -131,6 +147,20 @@ private: // ########## private 변수 블록 ##########
 	FJoustPlayerStats PlayerABaseStats;
 	UPROPERTY(EditDefaultsOnly, Category = "Joust|Player")
 	FJoustPlayerStats PlayerBBaseStats;
+
+	/** RoundResult 화면을 유지할 시간 */
+	UPROPERTY(EditDefaultsOnly, Category = "Joust|Presentation", meta = (ClampMin = "0.1"))
+	float RoundResultDisplayDuration = 3.0f;
+
+	/** MatchResult 화면을 유지한 뒤 Match를 완료할 시간 */
+	UPROPERTY(EditDefaultsOnly, Category = "Joust|Presentation", meta = (ClampMin = "0.1"))
+	float MatchResultDisplayDuration = 5.0f;
+
+	/** RoundResult 완료 타이머 */
+	FTimerHandle RoundResultCompletionTimerHandle;
+
+	/** MatchResult 완료 타이머 */
+	FTimerHandle MatchResultCompletionTimerHandle;
 
 public: // ########## GET SET 블록 ##########
 

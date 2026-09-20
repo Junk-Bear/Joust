@@ -29,26 +29,22 @@ bool FJoustPredictionSettingsResolver::Resolve(
 	OutSettings.StageCount = InAttackTypeData.StageRadiusRatios.Num();
 
 	const int32 TransitionCount = OutSettings.StageCount - 1;
-
 	if (TransitionCount <= 0)
 		return false;
 
 	const float RadiusModifier = ResolveRadiusModifier(InAttackerDeception, InDefenderReading);
 
 	const float DurationModifier = ResolveDurationModifier(InAttackerQuickness);
-
 	if (RadiusModifier <= 0.0f || DurationModifier <= 0.0f)
 		return false;
 
 	const float InitialRadius = InRuleSet.DefaultInitialPredictionRadius * InAttackTypeData.InitialRadiusMultiplier * RadiusModifier;
 
 	const float FinalDuration = InAttackTypeData.DefensePhaseDuration * DurationModifier;
-
 	if (!FMath::IsFinite(InitialRadius) || !FMath::IsFinite(FinalDuration) || InitialRadius <= 0.0f || FinalDuration <= 0.0f)
 		return false;
 
 	const float StageDuration = FinalDuration / static_cast<float>(TransitionCount);
-
 	if (!FMath::IsFinite(StageDuration) || StageDuration <= 0.0f)
 		return false;
 
@@ -99,7 +95,6 @@ bool FJoustPredictionSettingsResolver::ValidateStageRadiusRatios(const TArray<fl
 	for (int32 i = 0; i < InStageRadiusRatios.Num(); ++i)
 	{
 		const float Ratio = InStageRadiusRatios[i];
-
 		if (!FMath::IsFinite(Ratio) || Ratio < 0.0f || Ratio > 1.0f)
 			return false;
 

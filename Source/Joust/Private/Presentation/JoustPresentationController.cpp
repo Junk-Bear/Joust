@@ -13,6 +13,8 @@
 #include "Rules/JoustRuleSetDataAsset.h"
 #include "Presentation/JoustAttackWidget.h"
 #include "Presentation/JoustDefenseWidget.h"
+#include "Presentation/JoustRoundResultWidget.h"
+#include "Presentation/JoustMatchResultWidget.h"
 
 bool UJoustPresentationController::Initialize(AJoustPlayerController* InPlayerController, AJoustHUD* InHUD, UJoustHUDWidget* InRootWidget)
 {
@@ -95,8 +97,7 @@ void UJoustPresentationController::BindGameStateEvents()
 void UJoustPresentationController::UnbindGameStateEvents()
 {
 	AJoustGameState* GameStatePtr = GameState.Get();
-
-	if (!GameState.IsValid())
+	if (!IsValid(GameStatePtr))
 		return;
 
 	GameStatePtr->OnMatchStateChanged().RemoveAll(this);
@@ -174,11 +175,13 @@ void UJoustPresentationController::RefreshCurrentScreen()
 	case EJoustPhase::RoundResult:
 	{
 		const FJoustRoundResult& RoundResultRef = GameStatePtr->GetLastRoundResult();
-
 		if (RoundResultRef.RoundNumber != GameStatePtr->GetCurrentRoundNumber())
 			return;
 
-		RootWidgetPtr->ShowPhase(EJoustPhase::RoundResult, RoundResultRef.AtoBExchangeResult.bDefenderUnhorsed || RoundResultRef.BtoAExchangeResult.bDefenderUnhorsed);
+		RootWidgetPtr->ShowPhase(
+			EJoustPhase::RoundResult, RoundResultRef.AtoBExchangeResult.bDefenderUnhorsed || RoundResultRef.BtoAExchangeResult.bDefenderUnhorsed);
+
+		RefreshRoundResultScreen();
 
 		break;
 	}
@@ -188,6 +191,9 @@ void UJoustPresentationController::RefreshCurrentScreen()
 			return;
 		
 		RootWidgetPtr->ShowPhase(EJoustPhase::MatchResult, false);
+
+		RefreshMatchResultScreen();
+
 		break;
 
 	default:
@@ -293,7 +299,6 @@ void UJoustPresentationController::RefreshStrategyScreen()
 
 	const bool bLocalPlayerA = PlayerStatePtr == GameStatePtr->GetPlayerAState();
 	const bool bLocalPlayerB = PlayerStatePtr == GameStatePtr->GetPlayerBState();
-
 	if (!bLocalPlayerA && !bLocalPlayerB)
 		return;
 
@@ -390,12 +395,10 @@ void UJoustPresentationController::RefreshPhaseEntry()
 		return;
 
 	const int32 CurrentRoundNumber = GameStatePtr->GetCurrentRoundNumber();
-
 	if (CurrentRoundNumber <= 0)
 		return;
 
 	const EJoustPhase CurrentPhase = GameStatePtr->GetCurrentPhase();
-
 	if (
 		bHasInitializedPhase &&
 		LastInitializedRoundNumber == CurrentRoundNumber &&
@@ -415,7 +418,6 @@ void UJoustPresentationController::RefreshPhaseEntry()
 
 		const bool bLocalPlayerA = PlayerStatePtr == GameStatePtr->GetPlayerAState();
 		const bool bLocalPlayerB = PlayerStatePtr == GameStatePtr->GetPlayerBState();
-
 		if (!bLocalPlayerA && !bLocalPlayerB)
 			return;
 
@@ -622,6 +624,50 @@ void UJoustPresentationController::RefreshDefensePrediction()
 		return;
 
 	DefenseWidgetPtr->SetPredictionState(*PredictionStatePtr);
+}
+
+void UJoustPresentationController::RefreshRoundResultScreen()
+{
+	AJoustGameState* GameStatePtr = GameState.Get();
+	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
+	AJoustPlayerState* PlayerStatePtr = GetPlayerState();
+	if (!IsValid(GameStatePtr) || !IsValid(RootWidgetPtr) || !IsValid(PlayerStatePtr))
+		return;
+	
+	const FJoustRoundResult& RoundResultRef = GameStatePtr->GetLastRoundResult();
+	if (RoundResultRef.RoundNumber <= 0 || RoundResultRef.RoundNumber != GameStatePtr->GetCurrentRoundNumber())
+		return;
+	
+	const bool bLocalPlayerA = PlayerStatePtr == GameStatePtr->GetPlayerAState();
+	const bool bLocalPlayerB = PlayerStatePtr == GameStatePtr->GetPlayerBState();
+	if (!bLocalPlayerA && !bLocalPlayerB)
+		return;
+
+	UJoustRoundResultWidget* RoundResultWidgetPtr = RootWidgetPtr->GetRoundResultWidget();
+	if (!IsValid(RoundResultWidgetPtr))
+		return;
+
+	RoundResultWidgetPtr->SetRoundResult(RoundResultRef, bLocalPlayerA, GameStatePtr->GetPlayerAScore(), GameStatePtr->GetPlayerBScore());
+}
+
+void UJoustPresentationController::RefreshMatchResultScreen()
+{
+	AJoustGameState* GameStatePtr = GameState.Get();
+	UJoustHUDWidget* RootWidgetPtr = RootWidget.Get();
+	AJoustPlayerState* PlayerStatePtr = GetPlayerState();
+	if (!IsValid(GameStatePtr) || !IsValid(RootWidgetPtr) || !IsValid(PlayerStatePtr) || !GameStatePtr->IsMatchFinished())
+		return;
+	
+	const bool bLocalPlayerA = PlayerStatePtr == GameStatePtr->GetPlayerAState();
+	const bool bLocalPlayerB = PlayerStatePtr == GameStatePtr->GetPlayerBState();
+	if (!bLocalPlayerA && !bLocalPlayerB)
+		return;
+
+	UJoustMatchResultWidget* MatchResultWidgetPtr = RootWidgetPtr->GetMatchResultWidget();
+	if (!IsValid(MatchResultWidgetPtr))
+		return;
+
+	MatchResultWidgetPtr->SetMatchResult(GameStatePtr->GetCurrentMatchResult(), bLocalPlayerA);
 }
 
 void UJoustPresentationController::HandleStartMatchRequested()

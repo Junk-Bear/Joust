@@ -34,12 +34,10 @@ bool FJoustFakePredictionGenerator::Generate(
 	for (int32 i = 0; i < InSettings.FakeCircleCount; ++i)
 	{
 		FVector2D FakeAttackPoint;
-
 		if (!GenerateFakeAttackPoint(InAttackPoint, InLanceBoxMin, InLanceBoxMax, InMaxRetries, InMinFakeAttackPointDistance, InRandomProvider, FakeAttackPoint))
 			return false;
 
 		FJoustPredictionSeries FakeSeries;
-
 		if (!FJoustPredictionSeriesGenerator::Generate(
 			InSettings, FakeAttackPoint, InPredictionSeed, InLanceBoxMin, InLanceBoxMax, InMaxRetries, InRandomProvider, FakeSeries))
 			return false;
@@ -74,7 +72,6 @@ bool FJoustFakePredictionGenerator::GenerateFakeAttackPoint(const FVector2D& InA
 	for (int32 i = 0; i < InMaxRetries; ++i)
 	{
 		FVector2D Candidate = InRandomProvider.GetRandom(RandomMin, RandomMax);
-
 		if (!FMath::IsFinite(Candidate.X) || !FMath::IsFinite(Candidate.Y))
 			continue;
 

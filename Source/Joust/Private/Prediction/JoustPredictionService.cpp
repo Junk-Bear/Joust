@@ -34,7 +34,6 @@ bool UJoustPredictionService::PreparePrediction(
 		return false;
 
 	FJoustPredictionSettings CandidateSettings;
-
 	if (!FJoustPredictionSettingsResolver::Resolve(
 		*RuleSet, *AttackTypeDataPtr,
 		InAttackerDeception, InAttackerQuickness,
@@ -43,7 +42,6 @@ bool UJoustPredictionService::PreparePrediction(
 		return false;
 		
 	FJoustPredictionSeries CandidateRealSeries;
-
 	if (!FJoustPredictionSeriesGenerator::Generate(
 		CandidateSettings,
 		InAttackPoint,
@@ -56,7 +54,6 @@ bool UJoustPredictionService::PreparePrediction(
 		return false;
 
 	TArray<FJoustPredictionSeries> CandidateFakeSeries;
-
 	if (!FJoustFakePredictionGenerator::Generate(
 		CandidateSettings,
 		InAttackPoint,

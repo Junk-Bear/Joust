@@ -215,7 +215,6 @@ bool UJoustRoundCoordinator::BeginAttackPhase()
 		RuleSet->OnePlayerCompletedRemainingTime,
 		ERoundFlowState::ReadyForAttack, ERoundFlowState::Attack
 	);
-
 	if (!bStarted)
 	{
 		AttackService->SetSubmissionOpen(false);
@@ -231,7 +230,6 @@ bool UJoustRoundCoordinator::BeginDefensePhase()
 	
 	const float AToBDuration = AToBPredictionService->GetCurrentSettings().TotalDuration;
 	const float BToADuration = BToAPredictionService->GetCurrentSettings().TotalDuration;
-
 	if (AToBDuration <= 0.0f || BToADuration <= 0.0f)
 		return false;
 	
@@ -596,7 +594,6 @@ bool UJoustRoundCoordinator::SubmitDefaultStrategySelection(bool bInPlayerA)
 		return true;
 
 	TArray<UJoustStrategyCardDataAsset*> SelectableCards;
-
 	if (!StrategyService->GetSelectableCards(bInPlayerA, SelectableCards))
 		return false;
 
@@ -676,7 +673,6 @@ bool UJoustRoundCoordinator::SubmitStrategyBan(bool bInPlayerA, const IJoustStra
 		return false;
 
 	FName CardID;
-
 	if (!InStrategyInput.TryGetBannedStrategyCardID(CardID))
 		return false;
 
@@ -703,7 +699,6 @@ bool UJoustRoundCoordinator::SubmitStrategySelection(bool bInPlayerA, const IJou
 		return false;
 
 	FName CardID;
-
 	if (!InStrategyInput.TryGetSelectedStrategyCardID(CardID))
 		return false;
 
@@ -1092,7 +1087,6 @@ bool UJoustRoundCoordinator::SyncAttackUsageStates()
 	
 	TMap<EJoustAttackType, int32> PlayerAUsage;
 	TMap<EJoustAttackType, int32> PlayerBUsage;
-
 	if (!AttackService->GetUsageSnapshot(true, PlayerAUsage) || !AttackService->GetUsageSnapshot(false, PlayerBUsage))
 		return false;
 
