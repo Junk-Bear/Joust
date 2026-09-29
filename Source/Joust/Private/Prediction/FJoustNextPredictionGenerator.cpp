@@ -73,5 +73,25 @@ bool FJoustNextPredictionGenerator::Generate(const FJoustPredictionCircle& InCur
 		return true;
 	}
 
-	return false;
+	const FVector2D CenterDelta = InTargetPoint - InCurrentCircle.Center;
+	const float CenterDistance = CenterDelta.Size();
+	const float MaxCenterDistance = InCurrentCircle.Radius - InNextRadius;
+
+	FVector2D FallbackCenter = InTargetPoint;
+	if (CenterDistance > MaxCenterDistance && CenterDistance > KINDA_SMALL_NUMBER)
+	{
+		FallbackCenter = InCurrentCircle.Center + CenterDelta * (MaxCenterDistance / CenterDistance);
+	}
+
+	FJoustPredictionCircle FallbackCircle;
+
+	FallbackCircle.Center = FallbackCenter;
+	FallbackCircle.Radius = InNextRadius;
+
+	if (!FJoustPredictionValidator::ValidateNext(InCurrentCircle, FallbackCircle, InTargetPoint, InLanceBoxMin, InLanceBoxMax)) 
+		return false;
+
+	OutCircle = FallbackCircle;
+
+	return true;
 }

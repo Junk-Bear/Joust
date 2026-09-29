@@ -53,6 +53,15 @@ bool FJoustInitialPredictionGenerator::Generate(
 		OutCircle = Candidate;
 		return true;
 	}
+	FJoustPredictionCircle FallbackCircle;
 
-	return false;
+	FallbackCircle.Center = InTargetPoint;
+	FallbackCircle.Radius = InInitialRadius;
+
+	if (!FJoustPredictionValidator::ValidateInitial(FallbackCircle, InTargetPoint, InLanceBoxMin, InLanceBoxMax))
+		return false;
+
+	OutCircle = FallbackCircle;
+
+	return true;
 }
